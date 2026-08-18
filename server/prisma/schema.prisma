@@ -1,0 +1,492 @@
+// NATGAS Uganda Limited - Database Schema
+// Prisma ORM with PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  EDITOR
+  HR
+  CONTENT_MANAGER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ApplicationStatus {
+  NEW
+  REVIEWING
+  SHORTLISTED
+  INTERVIEW
+  REJECTED
+  HIRED
+}
+
+enum ContactStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  CONSULTANT
+}
+
+enum StorageProvider {
+  LOCAL
+  S3
+  CLOUDINARY
+}
+
+// ==================== USERS & AUTH ====================
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  username          String    @unique
+  passwordHash      String    @map("password_hash")
+  firstName         String    @map("first_name")
+  lastName          String    @map("last_name")
+  role              UserRole  @default(EDITOR)
+  status            UserStatus @default(ACTIVE)
+  avatarUrl         String?   @map("avatar_url")
+  phone             String?
+  department        String?
+  lastLoginAt       DateTime? @map("last_login_at")
+  lastLoginIp       String?   @map("last_login_ip")
+  loginAttempts     Int       @default(0) @map("login_attempts")
+  lockedUntil       DateTime? @map("locked_until")
+  emailVerified     Boolean   @default(false) @map("email_verified")
+  mustChangePassword Boolean  @default(false) @map("must_change_password")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  createdById       String?   @map("created_by_id")
+
+  // Relations
+  sessions          Session[]
+  passwordResets    PasswordReset[]
+  auditLogs         AuditLog[]       @relation("AuditLogUser")
+  createdProducts   Product[]        @relation("ProductCreatedBy")
+  updatedProducts   Product[]        @relation("ProductUpdatedBy")
+  createdNews       NewsArticle[]    @relation("NewsCreatedBy")
+  authoredNews      NewsArticle[]    @relation("NewsAuthor")
+  createdJobs       Job[]
+  createdServices   Service[]
+  createdLocations  Location[]
+  uploadedMedia     Media[]
+  createdPages      Page[]
+  createdBy         User?            @relation("UserCreatedBy", fields: [createdById], references: [id])
+  createdUsers      User[]           @relation("UserCreatedBy")
+
+  @@map("users")
+  @@index([email])
+  @@index([username])
+  @@index([role])
+  @@index([status])
+}
+
+model Session {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  token       String   @unique
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  expiresAt   DateTime @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  lastUsedAt  DateTime @default(now()) @map("last_used_at")
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_resets")
+  @@index([userId])
+  @@index([token])
+}
+
+// ==================== AUDIT LOGS ====================
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?  @map("user_id")
+  action     String
+  resource   String
+  resourceId String?  @map("resource_id")
+  metadata   Json?
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user       User?    @relation("AuditLogUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@index([createdAt])
+}
+
+// ==================== PRODUCTS ====================
+
+model ProductCategory {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  displayOrder Int      @default(0) @map("display_order")
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  products    Product[]
+
+  @@map("product_categories")
+  @@index([slug])
+}
+
+model Product {
+  id               String          @id @default(uuid())
+  name             String
+  slug             String          @unique
+  description      String?
+  shortDescription String?         @map("short_description")
+  categoryId       String?         @map("category_id")
+  cylinderSize     String?         @map("cylinder_size")
+  weight           Float?
+  features         Json?           // Array of feature strings
+  safetyInfo       String?         @map("safety_info")
+  specifications   Json?           // Key-value specifications
+  imageUrl         String?         @map("image_url")
+  images           Json?           // Array of additional image URLs
+  isAvailable      Boolean         @default(true) @map("is_available")
+  status           ContentStatus   @default(DRAFT)
+  displayOrder     Int             @default(0) @map("display_order")
+  isFeatured       Boolean         @default(false) @map("is_featured")
+  seoTitle         String?         @map("seo_title")
+  seoDescription   String?         @map("seo_description")
+  createdById      String?         @map("created_by_id")
+  updatedById      String?         @map("updated_by_id")
+  publishedAt      DateTime?       @map("published_at")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  category         ProductCategory? @relation(fields: [categoryId], references: [id])
+  createdBy        User?            @relation("ProductCreatedBy", fields: [createdById], references: [id])
+  updatedBy        User?            @relation("ProductUpdatedBy", fields: [updatedById], references: [id])
+
+  @@map("products")
+  @@index([slug])
+  @@index([categoryId])
+  @@index([status])
+  @@index([displayOrder])
+}
+
+// ==================== SERVICES ====================
+
+model Service {
+  id           String        @id @default(uuid())
+  name         String
+  slug         String        @unique
+  description  String?
+  shortDesc    String?       @map("short_desc")
+  icon         String?
+  imageUrl     String?       @map("image_url")
+  features     Json?
+  status       ContentStatus @default(DRAFT)
+  displayOrder Int           @default(0) @map("display_order")
+  isFeatured   Boolean       @default(false) @map("is_featured")
+  seoTitle     String?       @map("seo_title")
+  seoDescription String?     @map("seo_description")
+  createdById  String?       @map("created_by_id")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  createdBy    User?         @relation(fields: [createdById], references: [id])
+
+  @@map("services")
+  @@index([slug])
+  @@index([status])
+}
+
+// ==================== PAGES ====================
+
+model Page {
+  id             String        @id @default(uuid())
+  title          String
+  slug           String        @unique
+  heroTitle      String?       @map("hero_title")
+  heroSubtitle   String?       @map("hero_subtitle")
+  heroImageUrl   String?       @map("hero_image_url")
+  content        Json?         // Rich content blocks
+  excerpt        String?
+  imageUrl       String?       @map("image_url")
+  status         ContentStatus @default(DRAFT)
+  isSystem       Boolean       @default(false) @map("is_system") // Cannot be deleted
+  seoTitle       String?       @map("seo_title")
+  seoDescription String?       @map("seo_description")
+  ogImage        String?       @map("og_image")
+  createdById    String?       @map("created_by_id")
+  publishedAt    DateTime?     @map("published_at")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  createdBy      User?         @relation(fields: [createdById], references: [id])
+
+  @@map("pages")
+  @@index([slug])
+  @@index([status])
+}
+
+// ==================== NEWS / BLOG ====================
+
+model NewsCategory {
+  id           String        @id @default(uuid())
+  name         String        @unique
+  slug         String        @unique
+  description  String?
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  articles     NewsArticle[]
+
+  @@map("news_categories")
+  @@index([slug])
+}
+
+model NewsArticle {
+  id             String        @id @default(uuid())
+  title          String
+  slug           String        @unique
+  summary        String?
+  content        String        // Rich text / markdown
+  featuredImage  String?       @map("featured_image")
+  authorId       String?       @map("author_id")
+  categoryId     String?       @map("category_id")
+  status         ContentStatus @default(DRAFT)
+  isFeatured     Boolean       @default(false) @map("is_featured")
+  tags           Json?         // Array of tag strings
+  seoTitle       String?       @map("seo_title")
+  seoDescription String?       @map("seo_description")
+  ogImage        String?       @map("og_image")
+  publishedAt    DateTime?     @map("published_at")
+  createdById    String?       @map("created_by_id")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  author         User?         @relation("NewsAuthor", fields: [authorId], references: [id])
+  category       NewsCategory? @relation(fields: [categoryId], references: [id])
+  createdBy      User?         @relation("NewsCreatedBy", fields: [createdById], references: [id])
+
+  @@map("news_articles")
+  @@index([slug])
+  @@index([status])
+  @@index([publishedAt])
+  @@index([categoryId])
+}
+
+// ==================== CAREERS ====================
+
+model Job {
+  id               String         @id @default(uuid())
+  title            String
+  slug             String         @unique
+  department       String?
+  location         String?
+  employmentType   EmploymentType @default(FULL_TIME) @map("employment_type")
+  description      String
+  responsibilities String?
+  requirements     String?
+  benefits         String?
+  salaryRange      String?        @map("salary_range")
+  deadline         DateTime?
+  status           ContentStatus  @default(DRAFT)
+  isFeatured       Boolean        @default(false) @map("is_featured")
+  createdById      String?        @map("created_by_id")
+  publishedAt      DateTime?      @map("published_at")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  createdBy        User?          @relation(fields: [createdById], references: [id])
+  applications     JobApplication[]
+
+  @@map("jobs")
+  @@index([slug])
+  @@index([status])
+  @@index([deadline])
+}
+
+model JobApplication {
+  id             String            @id @default(uuid())
+  jobId          String            @map("job_id")
+  fullName       String            @map("full_name")
+  email          String
+  phone          String?
+  cvUrl          String?           @map("cv_url")
+  coverLetter    String?           @map("cover_letter")
+  linkedInUrl    String?           @map("linkedin_url")
+  status         ApplicationStatus @default(NEW)
+  notes          String?
+  appliedAt      DateTime          @default(now()) @map("applied_at")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  job            Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@map("job_applications")
+  @@index([jobId])
+  @@index([email])
+  @@index([status])
+  @@index([appliedAt])
+}
+
+// ==================== LOCATIONS ====================
+
+model Location {
+  id            String   @id @default(uuid())
+  name          String
+  address       String
+  district      String
+  region        String
+  phone         String?
+  email         String?
+  latitude      Float?
+  longitude     Float?
+  openingHours  String?  @map("opening_hours")
+  isHeadquarters Boolean @default(false) @map("is_headquarters")
+  isActive      Boolean  @default(true) @map("is_active")
+  imageUrl      String?  @map("image_url")
+  displayOrder  Int      @default(0) @map("display_order")
+  createdById   String?  @map("created_by_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  createdBy     User?    @relation(fields: [createdById], references: [id])
+
+  @@map("locations")
+  @@index([region])
+  @@index([isActive])
+}
+
+// ==================== MEDIA ====================
+
+model Media {
+  id           String          @id @default(uuid())
+  filename     String
+  originalName String          @map("original_name")
+  mimeType     String          @map("mime_type")
+  size         Int
+  url          String
+  thumbnailUrl String?         @map("thumbnail_url")
+  altText      String?         @map("alt_text")
+  caption      String?
+  provider     StorageProvider @default(LOCAL)
+  storageKey   String?         @map("storage_key")
+  folder       String?
+  width        Int?
+  height       Int?
+  uploadedById String?         @map("uploaded_by_id")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+
+  uploadedBy   User?           @relation(fields: [uploadedById], references: [id])
+
+  @@map("media")
+  @@index([mimeType])
+  @@index([folder])
+  @@index([createdAt])
+}
+
+// ==================== CONTACT ====================
+
+model ContactMessage {
+  id        String        @id @default(uuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String
+  status    ContactStatus @default(UNREAD)
+  ipAddress String?       @map("ip_address")
+  userAgent String?       @map("user_agent")
+  notes     String?
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  @@map("contact_messages")
+  @@index([status])
+  @@index([email])
+  @@index([createdAt])
+}
+
+// ==================== FAQs ====================
+
+model FAQ {
+  id           String        @id @default(uuid())
+  question     String
+  answer       String
+  category     String?
+  displayOrder Int           @default(0) @map("display_order")
+  isActive     Boolean       @default(true) @map("is_active")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  @@map("faqs")
+  @@index([category])
+  @@index([displayOrder])
+}
+
+// ==================== WEBSITE SETTINGS ====================
+
+model WebsiteSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String?
+  type        String   @default("string") // string, json, boolean, number
+  category    String   @default("general")
+  label       String?
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("website_settings")
+  @@index([key])
+  @@index([category])
+}

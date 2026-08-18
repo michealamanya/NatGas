@@ -1,0 +1,9 @@
+import { Menu, Phone, X } from 'lucide-react';
+import { useState } from 'react';
+import { Link, NavLink, Outlet } from 'react-router-dom';
+
+const links = [['About', '/about'], ['Products', '/products'], ['Services', '/services'], ['Safety', '/safety'], ['Locations', '/locations'], ['News', '/news'], ['Careers', '/careers']];
+export default function PublicLayout() {
+  const [open, setOpen] = useState(false);
+  return <><header className="site-header"><div className="topline"><span>Reliable LPG energy across Uganda</span><a href="tel:+256000000000"><Phone size={14}/> +256 000 000 000</a></div><div className="nav"><Link className="brand" to="/"><span className="brand-mark">N</span><span>NAT<span>GAS</span><small>UGANDA LIMITED</small></span></Link><nav className={open ? 'open' : ''}>{links.map(([label, to]) => <NavLink key={to} to={to} onClick={() => setOpen(false)}>{label}</NavLink>)}<Link className="nav-contact" to="/contact">Contact us</Link></nav><button className="menu" aria-label="Toggle navigation" onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</button></div></header><main><Outlet /></main><footer><div className="footer-main"><div><Link className="brand footer-brand" to="/"><span className="brand-mark">N</span><span>NAT<span>GAS</span><small>UGANDA LIMITED</small></span></Link><p>Safe, dependable LPG solutions for Ugandan homes, businesses and communities.</p></div><div><h3>Explore</h3>{links.slice(0, 5).map(([l, p]) => <Link key={p} to={p}>{l}</Link>)}</div><div><h3>Contact</h3><p>Uganda</p><a href="mailto:info@natgasuganda.com">info@natgasuganda.com</a><a href="tel:+256000000000">+256 000 000 000</a></div></div><div className="footer-bottom">© {new Date().getFullYear()} NATGAS Uganda Limited <span><Link to="/privacy">Privacy</Link><Link to="/terms">Terms</Link><Link to="/admin/login">Staff login</Link></span></div></footer></>;
+}
