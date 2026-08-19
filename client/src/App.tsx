@@ -1,25 +1,142 @@
-import { ArrowRight, CheckCircle2, ChevronRight, Clock3, MapPin, Package, ShieldCheck, UsersRound } from 'lucide-react';
-import { FormEvent, useEffect, useState } from 'react';
-import { Navigate, Route, Routes, Link, useNavigate } from 'react-router-dom';
-import { api, Product, User } from './api/client';
-import PublicLayout from './components/PublicLayout';
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
+import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
+import { api, User } from './api/client';
 import AdminLayout from './components/AdminLayout';
+import PublicLayout from './components/PublicLayout';
 
-const fallbackProducts = [{ id: '3', name: '3kg LPG Cylinder', cylinderSize: '3kg', shortDescription: 'Everyday cooking energy for compact homes.' }, { id: '6', name: '6kg LPG Cylinder', cylinderSize: '6kg', shortDescription: 'A practical choice for the modern household.' }, { id: '12', name: '12.5kg LPG Cylinder', cylinderSize: '12.5kg', shortDescription: 'Reliable household energy with longer-lasting value.' }, { id: '38', name: '38kg LPG Cylinder', cylinderSize: '38kg', shortDescription: 'Dependable supply for commercial operations.' }];
-function Home() { const [products, setProducts] = useState<Product[]>(fallbackProducts); useEffect(() => { api<Product[]>('/products?featured=true').then(r => r.data.length && setProducts(r.data)).catch(() => undefined); }, []); return <><section className="hero"><div className="hero-copy"><p className="eyebrow">NATGAS UGANDA LIMITED</p><h1>Reliable LPG energy for <em>everyday life.</em></h1><p>Safe, accessible and dependable liquefied petroleum gas for homes, businesses and communities across Uganda.</p><div className="actions"><Link className="button gold" to="/products">Explore our products <ArrowRight size={18}/></Link><Link className="button ghost" to="/contact">Talk to NATGAS</Link></div></div><div className="hero-panel"><span className="hero-orb"/><div><ShieldCheck size={32}/><b>Safety-first supply</b><p>Quality-controlled LPG, handled with care.</p></div><div><MapPin size={32}/><b>Growing nationwide network</b><p>Find a trusted NATGAS point near you.</p></div></div></section><section className="intro section"><p className="eyebrow green">ENERGY YOU CAN COUNT ON</p><h2>Built around your needs.<br/>Backed by care.</h2><p className="lead">We bring practical LPG solutions closer to the people and enterprises that keep Uganda moving.</p><div className="value-grid"><article><ShieldCheck/><h3>Safety without compromise</h3><p>Safe handling guidance and responsible distribution at every touchpoint.</p></article><article><UsersRound/><h3>People-centred service</h3><p>Helpful support for households, retailers and commercial customers.</p></article><article><MapPin/><h3>Closer to you</h3><p>An expanding distribution network built for convenient access.</p></article></div></section><section className="products-band section"><div className="section-head"><div><p className="eyebrow">OUR LPG RANGE</p><h2>Right-sized energy.</h2></div><Link to="/products">View all products <ChevronRight size={18}/></Link></div><div className="product-grid">{products.slice(0,4).map((p, i) => <article className="product-card" key={p.id}><div className={'cylinder c'+i}><span>NAT<span>GAS</span></span><b>{p.cylinderSize ?? 'LPG'}</b></div><p className="eyebrow green">{p.category?.name ?? 'LPG CYLINDER'}</p><h3>{p.name}</h3><p>{p.shortDescription ?? p.description}</p><Link to={`/products/${p.slug ?? ''}`}>Learn more <ArrowRight size={16}/></Link></article>)}</div></section><section className="safety-callout"><div><p className="eyebrow">LPG SAFETY</p><h2>Energy works best when everyone feels safe.</h2><p>Explore simple, practical guidance for storing, using and responding to LPG safely.</p><Link className="button gold" to="/safety">Explore safety guidance</Link></div><CheckCircle2 className="safety-icon"/></section><section className="section cta"><p className="eyebrow green">LET’S WORK TOGETHER</p><h2>Need LPG for your home or business?</h2><Link className="button dark" to="/contact">Contact NATGAS <ArrowRight size={18}/></Link></section></> }
-function ProductsPage() { const [products, setProducts] = useState<Product[]>([]); useEffect(() => { api<Product[]>('/products').then(r => setProducts(r.data)).catch(() => setProducts(fallbackProducts)); }, []); return <Page title="Our products" intro="Practical LPG options, supplied responsibly for every scale of need."><div className="product-grid all-products">{products.map((p, i) => <article className="product-card" key={p.id}><div className={'cylinder c'+(i%4)}><span>NAT<span>GAS</span></span><b>{p.cylinderSize}</b></div><h3>{p.name}</h3><p>{p.shortDescription ?? p.description}</p></article>)}</div></Page> }
-function Page({ title, intro, children }: { title: string; intro: string; children?: React.ReactNode }) { return <><section className="page-hero"><p className="eyebrow">NATGAS UGANDA</p><h1>{title}</h1><p>{intro}</p></section><section className="section page-content">{children ?? <div className="info-grid"><article><h2>Made for Uganda</h2><p>Our team is focused on dependable energy access, responsible operations and service that earns your trust.</p></article><article><h2>Here to help</h2><p>Contact NATGAS for product, safety, distribution or partnership information.</p><Link className="text-link" to="/contact">Get in touch <ArrowRight size={16}/></Link></article></div>}</section></> }
-function Contact() { const [sent, setSent] = useState(false); const [error, setError] = useState(''); const submit = async (e: FormEvent<HTMLFormElement>) => { e.preventDefault(); const data = Object.fromEntries(new FormData(e.currentTarget)); try { await api('/contact', { method: 'POST', body: JSON.stringify(data) }); setSent(true); } catch (err) { setError(err instanceof Error ? err.message : 'Please try again.'); } }; return <Page title="Contact NATGAS" intro="Our team is ready to help with your LPG energy needs."><div className="contact-grid"><div><p className="eyebrow green">GET IN TOUCH</p><h2>How can we help?</h2><p>Whether you are a household, retailer, institution or business, we would like to hear from you.</p><div className="contact-detail"><PhoneIcon/> +256 000 000 000</div><div className="contact-detail"><MapPin/> Uganda</div><div className="contact-detail"><Clock3/> Monday–Friday, 8am–5pm</div></div>{sent ? <div className="form-success"><CheckCircle2/><h2>Thank you for contacting us.</h2><p>Our team will be in touch shortly.</p></div> : <form onSubmit={submit}><label>Name<input required name="name" /></label><label>Email<input required type="email" name="email" /></label><label>Phone<input name="phone" /></label><label>Subject<input required name="subject" /></label><label>Message<textarea required name="message" rows={5}/></label>{error && <p className="form-error">{error}</p>}<button className="button dark">Send message <ArrowRight size={18}/></button></form>}</div></Page> }
-function Login({ onLogin }: { onLogin: (u: User) => void }) { const [error, setError] = useState(''); const nav = useNavigate(); const submit = async (e: FormEvent<HTMLFormElement>) => { e.preventDefault(); const values = Object.fromEntries(new FormData(e.currentTarget)); try { const r = await api<{ user: User }>('/auth/login', { method: 'POST', body: JSON.stringify(values) }); onLogin(r.data.user); nav('/admin/dashboard'); } catch (err) { setError(err instanceof Error ? err.message : 'Unable to sign in.'); } }; return <div className="login-page"><Link className="brand" to="/"><span className="brand-mark">N</span><span>NAT<span>GAS</span><small>UGANDA LIMITED</small></span></Link><form onSubmit={submit}><p className="eyebrow green">SECURE STAFF ACCESS</p><h1>Welcome back</h1><p>Sign in to manage NATGAS digital content and operations.</p><label>Email address<input required type="email" name="email" autoComplete="email"/></label><label>Password<input required type="password" name="password" autoComplete="current-password"/></label>{error && <p className="form-error">{error}</p>}<button className="button dark">Sign in <ArrowRight size={18}/></button><Link className="forgot" to="/admin/forgot-password">Forgot your password?</Link></form></div> }
-function Dashboard() { const [stats, setStats] = useState<Record<string, number>>({}); useEffect(() => { api<Record<string, number>>('/admin/dashboard').then(r => setStats(r.data)).catch(() => undefined); }, []); const cards = [['Products', stats.products], ['Messages', stats.contactMessages], ['Job applications', stats.jobApplications], ['News articles', stats.newsArticles]]; return <><div className="dashboard-heading"><div><p className="eyebrow green">SYSTEM OVERVIEW</p><h2>Operational snapshot</h2></div><Link className="button dark" to="/admin/products">Manage products</Link></div><div className="stat-grid">{cards.map(([label, value]) => <article key={label as string}><span>{label}</span><b>{(value as number) ?? '—'}</b><small>Current total</small></article>)}</div><section className="admin-card"><h2>Start here</h2><p>Use the navigation to manage published website content, staff access, job vacancies and more. All changes are protected by your assigned role.</p></section></> }
-function Private({ user, children }: { user: User | null; children: React.ReactNode }) { return user ? <>{children}</> : <Navigate to="/admin/login" replace/>; }
-type AdminProduct = Product & { isAvailable: boolean; updatedAt: string };
-// The compact component declaration below intentionally keeps its data loader local.
-// @ts-ignore React's effect callback remains synchronous; the request is handled internally.
-function AdminProducts() { const [products, setProducts] = useState<AdminProduct[]>([]); const [creating, setCreating] = useState(false); const [error, setError] = useState(''); const load = () => api<AdminProduct[]>('/admin/products').then(r => setProducts(r.data)).catch(e => setError(e.message)); useEffect(load, []); const create = async (e: FormEvent<HTMLFormElement>) => { e.preventDefault(); const values = Object.fromEntries(new FormData(e.currentTarget)); try { await api('/admin/products', { method: 'POST', body: JSON.stringify({ ...values, isAvailable: true }) }); setCreating(false); load(); } catch (err) { setError(err instanceof Error ? err.message : 'Unable to create product.'); } }; const publish = async (product: AdminProduct) => { try { await api(`/admin/products/${product.id}/publish`, { method: 'PUT', body: JSON.stringify({ status: product.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED' }) }); load(); } catch (err) { setError(err instanceof Error ? err.message : 'Unable to update product.'); } }; return <><div className="dashboard-heading"><div><p className="eyebrow green">CMS / PRODUCTS</p><h2>Product catalogue</h2></div><button className="button dark" onClick={() => setCreating(true)}>Add product</button></div>{error && <p className="form-error">{error}</p>}{creating && <form className="admin-card admin-form" onSubmit={create}><h2>Add product</h2><div className="form-row"><label>Product name<input required name="name" placeholder="12.5kg LPG Cylinder"/></label><label>Cylinder size<input name="cylinderSize" placeholder="12.5kg"/></label></div><label>Description<textarea name="shortDescription" rows={3}/></label><label>Publishing status<select name="status"><option value="DRAFT">Save as draft</option><option value="PUBLISHED">Publish now</option></select></label><div className="form-actions"><button type="button" onClick={() => setCreating(false)}>Cancel</button><button className="button dark">Create product</button></div></form>}<section className="admin-card table-wrap"><table><thead><tr><th>Product</th><th>Size</th><th>Status</th><th>Availability</th><th></th></tr></thead><tbody>{products.map(p => <tr key={p.id}><td><b>{p.name}</b><small>{p.slug}</small></td><td>{p.cylinderSize ?? '—'}</td><td><span className={`badge ${p.status?.toLowerCase()}`}>{p.status}</span></td><td>{p.isAvailable ? 'Available' : 'Unavailable'}</td><td><button className="table-action" onClick={() => publish(p)}>{p.status === 'PUBLISHED' ? 'Unpublish' : 'Publish'}</button></td></tr>)}{!products.length && <tr><td colSpan={5}>No products yet.</td></tr>}</tbody></table></section></> }
-type NewsArticle = { id: string; title: string; slug: string; summary?: string; status: string; updatedAt: string; publishedAt?: string };
-// @ts-ignore The request is started within the effect and does not provide cleanup work.
-function AdminNews() { const [articles, setArticles] = useState<NewsArticle[]>([]); const [creating, setCreating] = useState(false); const [error, setError] = useState(''); const load = () => api<NewsArticle[]>('/admin/news').then(r => setArticles(r.data)).catch(e => setError(e.message)); useEffect(load, []); const create = async (e: FormEvent<HTMLFormElement>) => { e.preventDefault(); const values = Object.fromEntries(new FormData(e.currentTarget)); try { await api('/admin/news', { method: 'POST', body: JSON.stringify(values) }); setCreating(false); load(); } catch (err) { setError(err instanceof Error ? err.message : 'Unable to create article.'); } }; const toggle = async (article: NewsArticle) => { try { await api(`/admin/news/${article.id}`, { method: 'PUT', body: JSON.stringify({ status: article.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED' }) }); load(); } catch (err) { setError(err instanceof Error ? err.message : 'Unable to update article.'); } }; return <><div className="dashboard-heading"><div><p className="eyebrow green">CMS / NEWS</p><h2>News & updates</h2></div><button className="button dark" onClick={() => setCreating(true)}>Write article</button></div>{error && <p className="form-error">{error}</p>}{creating && <form className="admin-card admin-form" onSubmit={create}><h2>New article</h2><label>Headline<input required name="title" placeholder="NATGAS expands its distribution network"/></label><label>Summary<textarea name="summary" rows={2}/></label><label>Article content<textarea required name="content" rows={7} placeholder="Write the article here…"/></label><label>Publishing status<select name="status"><option value="DRAFT">Save as draft</option><option value="PUBLISHED">Publish now</option></select></label><div className="form-actions"><button type="button" onClick={() => setCreating(false)}>Cancel</button><button className="button dark">Save article</button></div></form>}<section className="admin-card table-wrap"><table><thead><tr><th>Article</th><th>Status</th><th>Last updated</th><th></th></tr></thead><tbody>{articles.map(a => <tr key={a.id}><td><b>{a.title}</b><small>{a.slug}</small></td><td><span className={`badge ${a.status.toLowerCase()}`}>{a.status}</span></td><td>{new Date(a.updatedAt).toLocaleDateString()}</td><td><button className="table-action" onClick={() => toggle(a)}>{a.status === 'PUBLISHED' ? 'Unpublish' : 'Publish'}</button></td></tr>)}{!articles.length && <tr><td colSpan={4}>No news articles yet.</td></tr>}</tbody></table></section></> }
-function SimpleAdmin({ title }: { title: string }) { if (title === 'Products') return <AdminProducts />; if (title === 'Website content & news') return <AdminNews />; return <section className="admin-card"><p className="eyebrow green">CMS MODULE</p><h2>{title}</h2><p>This secured module is ready for the corresponding API integration. The next implementation pass will add data tables, forms, filters and role-aware actions.</p></section> }
-function PhoneIcon() { return <Package size={20}/> }
-export default function App() { const [user, setUser] = useState<User | null>(null); useEffect(() => { api<User>('/auth/me').then(r => setUser(r.data)).catch(() => undefined); }, []); return <Routes><Route element={<PublicLayout/>}><Route path="/" element={<Home/>}/><Route path="/products" element={<ProductsPage/>}/><Route path="/contact" element={<Contact/>}/>{['about','services','safety','locations','news','careers','faq','privacy','terms'].map(path => <Route key={path} path={`/${path}`} element={<Page title={path === 'faq' ? 'Frequently asked questions' : path.replace(/\b\w/g, c => c.toUpperCase())} intro="Helpful information from NATGAS Uganda Limited."/>}/>)}</Route><Route path="/admin/login" element={<Login onLogin={setUser}/>}/><Route path="/admin" element={<Private user={user}><AdminLayout user={user!}/></Private>}><Route path="dashboard" element={<Dashboard/>}/><Route path="products" element={<SimpleAdmin title="Products"/>}/><Route path="content" element={<SimpleAdmin title="Website content & news"/>}/><Route path="careers" element={<SimpleAdmin title="Careers"/>}/><Route path="locations" element={<SimpleAdmin title="Locations"/>}/><Route path="users" element={<SimpleAdmin title="Staff & roles"/>}/><Route path="audit" element={<SimpleAdmin title="Audit logs"/>}/><Route path="settings" element={<SimpleAdmin title="Website settings"/>}/></Route><Route path="*" element={<Navigate to="/" replace/>}/></Routes>; }
+// ── Public pages (lazy loaded) ────────────────────────────────────────────────
+const Home        = lazy(() => import('./pages/Home'));
+const Products    = lazy(() => import('./pages/Products'));
+const ProductDetail = lazy(() => import('./pages/Products').then(m => ({ default: m.ProductDetail })));
+const Careers     = lazy(() => import('./pages/Careers'));
+const JobDetail   = lazy(() => import('./pages/Careers').then(m => ({ default: m.JobDetail })));
+const News        = lazy(() => import('./pages/News'));
+const NewsArticle = lazy(() => import('./pages/News').then(m => ({ default: m.NewsArticlePage })));
+const About       = lazy(() => import('./pages/StaticPages').then(m => ({ default: m.About })));
+const Services    = lazy(() => import('./pages/StaticPages').then(m => ({ default: m.Services })));
+const Contact     = lazy(() => import('./pages/StaticPages').then(m => ({ default: m.Contact })));
+const FAQ         = lazy(() => import('./pages/StaticPages').then(m => ({ default: m.FAQ })));
+const Privacy     = lazy(() => import('./pages/StaticPages').then(m => ({ default: m.Privacy })));
+const Terms       = lazy(() => import('./pages/StaticPages').then(m => ({ default: m.Terms })));
+
+// ── Admin pages (lazy loaded) ─────────────────────────────────────────────────
+const Login          = lazy(() => import('./pages/admin/Login'));
+const Dashboard      = lazy(() => import('./pages/admin/Dashboard'));
+const AdminProducts  = lazy(() => import('./pages/admin/AdminProducts'));
+const AdminNews      = lazy(() => import('./pages/admin/AdminNews'));
+const AdminJobs      = lazy(() => import('./pages/admin/AdminJobs'));
+const AdminMessages  = lazy(() => import('./pages/admin/AdminMessages'));
+const AdminUsers     = lazy(() => import('./pages/admin/AdminUsers'));
+const AdminAudit     = lazy(() => import('./pages/admin/AdminAudit'));
+const AdminSettings  = lazy(() => import('./pages/admin/AdminSettings'));
+const AdminPlaceholder = lazy(() => import('./pages/admin/AdminPlaceholder'));
+
+// ── Spinner ────────────────────────────────────────────────────────────────────
+function Spinner() {
+  return (
+    <div style={{ minHeight: '50vh', display: 'grid', placeItems: 'center' }}>
+      <div style={{ width: 32, height: 32, border: '3px solid #dde5e2', borderTopColor: '#0e3d39', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+    </div>
+  );
+}
+
+// ── Scroll to top on route change ─────────────────────────────────────────────
+function ScrollTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
+
+// ── Protected admin wrapper ────────────────────────────────────────────────────
+function AdminGuard({ user, children }: { user: User | null; children: ReactNode }) {
+  if (!user) return <Navigate to="/admin/login" replace />;
+  return <>{children}</>;
+}
+
+// ── Root app ───────────────────────────────────────────────────────────────────
+export default function App() {
+  const [user, setUser]       = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  // Re-hydrate session on page load
+  useEffect(() => {
+    api<User>('/auth/me')
+      .then(r => setUser(r.data))
+      .catch(() => undefined)
+      .finally(() => setAuthReady(true));
+  }, []);
+
+  // Wait for auth check before rendering protected routes
+  if (!authReady) return <Spinner />;
+
+  return (
+    <Suspense fallback={<Spinner />}>
+      <ScrollTop />
+      <Routes>
+
+        {/* ── Public website ──────────────────────────────── */}
+        <Route element={<PublicLayout />}>
+          <Route index               element={<Home />} />
+          <Route path="about"        element={<About />} />
+          <Route path="products"     element={<Products />} />
+          <Route path="products/:slug" element={<ProductDetail />} />
+          <Route path="services"     element={<Services />} />
+          <Route path="careers"      element={<Careers />} />
+          <Route path="careers/:slug" element={<JobDetail />} />
+          <Route path="news"         element={<News />} />
+          <Route path="news/:slug"   element={<NewsArticle />} />
+          <Route path="contact"      element={<Contact />} />
+          <Route path="faq"          element={<FAQ />} />
+          <Route path="privacy"      element={<Privacy />} />
+          <Route path="terms"        element={<Terms />} />
+        </Route>
+
+        {/* ── Admin login (no layout) ─────────────────────── */}
+        <Route
+          path="/admin/login"
+          element={
+            user
+              ? <Navigate to="/admin/dashboard" replace />
+              : <Login onLogin={setUser} />
+          }
+        />
+
+        {/* ── Admin (protected) ───────────────────────────── */}
+        <Route
+          path="/admin"
+          element={
+            <AdminGuard user={user}>
+              <AdminLayout user={user!} onLogout={() => setUser(null)} />
+            </AdminGuard>
+          }
+        >
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="products"  element={<AdminProducts />} />
+          <Route path="news"      element={<AdminNews />} />
+          <Route path="jobs"      element={<AdminJobs />} />
+          <Route path="messages"  element={<AdminMessages />} />
+          <Route path="users"     element={<AdminUsers />} />
+          <Route path="audit"     element={<AdminAudit />} />
+          <Route path="settings"  element={<AdminSettings />} />
+        </Route>
+
+        {/* ── Catch-all ───────────────────────────────────── */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
+  );
+}
+
+function NotFound() {
+  return (
+    <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: '40px 20px', textAlign: 'center' }}>
+      <div style={{ fontFamily: "'Playfair Display',Georgia,serif", fontSize: 96, fontWeight: 700, color: '#dde5e2', lineHeight: 1 }}>404</div>
+      <h1 style={{ fontSize: 28, color: 'var(--green, #0e3d39)', margin: 0 }}>Page not found</h1>
+      <p style={{ color: '#52706b', maxWidth: 400 }}>The page you're looking for doesn't exist or has been moved.</p>
+      <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#0e3d39', color: '#fff', padding: '12px 22px', fontWeight: 600, fontSize: 14, textDecoration: 'none', borderRadius: 6 }}>
+        ← Return to homepage
+      </a>
+    </div>
+  );
+}

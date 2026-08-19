@@ -93,6 +93,10 @@ export async function createUser(req: AuthenticatedRequest, res: Response): Prom
   }
 
   const tempPassword = password ?? crypto.randomBytes(12).toString('base64url');
+  // ADMINs can administer website staff, but cannot create a second SUPER_ADMIN.
+  if (req.user!.role === 'ADMIN' && role === 'SUPER_ADMIN') {
+    throw new AppError('Only a Super Administrator can create a Super Administrator account', 403);
+  }
   const passwordHash = await hashPassword(tempPassword);
 
   const user = await prisma.user.create({
@@ -232,6 +236,12 @@ export async function updateUserRole(req: AuthenticatedRequest, res: Response): 
 
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) throw new NotFoundError('User');
+
+  // An ADMIN has elevated website-management access, including assignment of
+  // operational roles, but cannot change the Super Administrator boundary.
+  if (req.user!.role === 'ADMIN' && (user.role === 'SUPER_ADMIN' || role === 'SUPER_ADMIN')) {
+    throw new AppError('Only a Super Administrator can manage Super Administrator accounts', 403);
+  }
 
   await prisma.user.update({ where: { id }, data: { role } });
 

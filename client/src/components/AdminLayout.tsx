@@ -1,6 +1,95 @@
-import { BarChart3, BriefcaseBusiness, FileText, LayoutDashboard, LogOut, MapPin, Package, Settings, Users } from 'lucide-react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import {
+  BarChart3, Briefcase, FileText, Globe, LayoutDashboard,
+  LogOut, MessageSquare, Package, Settings, Users,
+} from 'lucide-react';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { api, User } from '../api/client';
 
-const items = [[LayoutDashboard, 'Overview', '/admin/dashboard'], [Package, 'Products', '/admin/products'], [FileText, 'Content & news', '/admin/content'], [BriefcaseBusiness, 'Careers', '/admin/careers'], [MapPin, 'Locations', '/admin/locations'], [Users, 'Staff', '/admin/users'], [BarChart3, 'Audit logs', '/admin/audit'], [Settings, 'Settings', '/admin/settings']];
-export default function AdminLayout({ user }: { user: User }) { const navigate = useNavigate(); const logout = async () => { await api('/auth/logout', { method: 'POST' }); navigate('/admin/login'); }; return <div className="admin-shell"><aside><Link className="admin-brand" to="/admin/dashboard"><b>N</b> NATGAS <small>ADMIN</small></Link><div className="admin-label">WORKSPACE</div>{items.map(([Icon, label, to]) => { const Glyph = Icon as typeof LayoutDashboard; return <NavLink key={to as string} to={to as string}><Glyph size={18}/>{label as string}</NavLink>; })}<button className="logout" onClick={logout}><LogOut size={18}/> Sign out</button></aside><section className="admin-content"><header className="admin-top"><div><span>Administration</span><h1>Good day, {user.firstName}</h1></div><div className="profile"><b>{user.firstName[0]}{user.lastName[0]}</b><span>{user.role.replace('_', ' ')}</span></div></header><Outlet /></section></div>; }
+const NAV = [
+  { icon: LayoutDashboard, label: 'Overview',   to: '/admin/dashboard' },
+  { icon: Package,         label: 'Products',   to: '/admin/products'  },
+  { icon: FileText,        label: 'News',        to: '/admin/news'      },
+  { icon: Briefcase,       label: 'Jobs',        to: '/admin/jobs'      },
+  { icon: MessageSquare,   label: 'Messages',    to: '/admin/messages'  },
+  { icon: Users,           label: 'Staff',       to: '/admin/users'     },
+  { icon: BarChart3,       label: 'Audit Logs',  to: '/admin/audit'     },
+  { icon: Settings,        label: 'Settings',    to: '/admin/settings'  },
+];
+
+export default function AdminLayout({ user, onLogout }: { user: User; onLogout?: () => void }) {
+  const navigate = useNavigate();
+
+  const logout = async () => {
+    try { await api('/auth/logout', { method: 'POST' }); } catch { /**/ }
+    onLogout?.();
+    navigate('/admin/login');
+  };
+
+  return (
+    <div className="admin-wrap">
+      {/* ── Sidebar ── */}
+      <aside className="admin-sidebar">
+        <div className="admin-logo">
+          <img
+            src="/naticon.jpeg"
+            alt="Natgas Uganda"
+            style={{ height: 36, width: 'auto', objectFit: 'contain', borderRadius: 4 }}
+          />
+          <div className="admin-logo-text">
+            NATGAS <small>ADMIN</small>
+          </div>
+        </div>
+
+        <div className="admin-nav">
+          <div className="admin-nav-lbl">Workspace</div>
+          {NAV.map(({ icon: Icon, label, to }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) => `anav-link${isActive ? ' active' : ''}`}
+            >
+              <Icon size={15} /> {label}
+            </NavLink>
+          ))}
+
+          <div className="admin-nav-lbl" style={{ marginTop: 20 }}>Quick actions</div>
+          <a
+            href="/"
+            target="_blank"
+            rel="noreferrer"
+            className="anav-link"
+          >
+            <Globe size={15} /> View website ↗
+          </a>
+          <button className="anav-link" style={{ color: '#f08888' }} onClick={logout}>
+            <LogOut size={15} /> Sign out
+          </button>
+        </div>
+      </aside>
+
+      {/* ── Main body ── */}
+      <div className="admin-body">
+        {/* Top bar */}
+        <div className="admin-top">
+          <h2>Natgas Uganda — Content Management</h2>
+          <div className="admin-top-r">
+            <span style={{ fontSize: 12, color: 'var(--muted)', textTransform: 'capitalize' }}>
+              {user.role.replace(/_/g, ' ').toLowerCase()}
+            </span>
+            <div className="admin-avatar">
+              {user.firstName[0]}{user.lastName[0]}
+            </div>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--green)' }}>
+              {user.firstName} {user.lastName}
+            </span>
+          </div>
+        </div>
+
+        {/* Page content */}
+        <main className="admin-main">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+}

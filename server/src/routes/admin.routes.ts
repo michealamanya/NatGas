@@ -119,7 +119,7 @@ router.post('/users', requireRole('ADMIN', 'SUPER_ADMIN'), validate(createUserSc
 router.get('/users/:id', requireRole('ADMIN', 'SUPER_ADMIN'), getUserById);
 router.put('/users/:id', requireRole('ADMIN', 'SUPER_ADMIN'), validate(updateUserSchema), updateUser);
 router.put('/users/:id/status', requireRole('ADMIN', 'SUPER_ADMIN'), validate(updateUserStatusSchema), updateUserStatus);
-router.put('/users/:id/role', requireRole('SUPER_ADMIN'), validate(updateUserRoleSchema), updateUserRole);
+router.put('/users/:id/role', requireRole('ADMIN', 'SUPER_ADMIN'), validate(updateUserRoleSchema), updateUserRole);
 router.post('/users/:id/reset-password', requireRole('ADMIN', 'SUPER_ADMIN'), adminResetPassword);
 router.delete('/users/:id', requireRole('SUPER_ADMIN'), deleteUser);
 
