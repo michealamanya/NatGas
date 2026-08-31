@@ -1,5 +1,5 @@
-import { Loader2, Plus, X } from 'lucide-react';
-import { FormEvent, useEffect, useState } from 'react';
+import { ImagePlus, Loader2, Plus, X } from 'lucide-react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { api, NewsArticle } from '../../api/client';
 
 export default function AdminNews() {
@@ -8,6 +8,9 @@ export default function AdminNews() {
   const [showForm, setShowForm] = useState(false);
   const [editing,  setEditing]  = useState<NewsArticle | null>(null);
   const [toast,    setToast]    = useState('');
+  const imageRef = useRef<HTMLInputElement>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState('');
 
   const notify = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
   const load = () => {
@@ -18,19 +21,38 @@ export default function AdminNews() {
   };
   useEffect(load, []);
 
-  const openCreate = () => { setEditing(null); setShowForm(true); };
-  const openEdit   = (a: NewsArticle) => { setEditing(a); setShowForm(true); };
-  const closeForm  = () => { setShowForm(false); setEditing(null); };
+  const openCreate = () => { setEditing(null); setImageFile(null); setImagePreview(''); setShowForm(true); };
+  const openEdit   = (a: NewsArticle) => { setEditing(a); setImageFile(null); setImagePreview(a.featuredImage ?? ''); setShowForm(true); };
+  const closeForm  = () => { setShowForm(false); setEditing(null); setImageFile(null); setImagePreview(''); };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const payload = {
+    const payload: Record<string, unknown> = {
       title:   fd.get('title'),
       summary: fd.get('summary'),
       content: fd.get('content'),
       status:  fd.get('status'),
     };
+    if (imageFile) {
+      const imageData = new FormData();
+      imageData.append('file', imageFile);
+      imageData.append('folder', 'news');
+      try {
+        const result = await api<{ url: string }>('/admin/media/upload', { method: 'POST', body: imageData, headers: {} });
+        payload.featuredImage = result.data.url;
+      } catch (err) {
+        notify(err instanceof Error ? `Image upload failed: ${err.message}` : 'Image upload failed');
+        return;
+      }
+    }
     try {
       if (editing) {
         await api(`/admin/news/${editing.id}`, { method: 'PUT', body: JSON.stringify(payload) });
@@ -78,6 +100,16 @@ export default function AdminNews() {
                 <textarea name="summary" rows={2} defaultValue={editing?.summary ?? ''} placeholder="Brief summary shown in listings…" />
               </div>
               <div className="form-group">
+                <label>Featured image</label>
+                <div className="upload-zone news-image-upload" onClick={() => imageRef.current?.click()}>
+                  {imagePreview
+                    ? <img src={imagePreview} alt="Article preview" />
+                    : <><ImagePlus size={22} /><span>Click to add an article image</span><small>JPG, PNG, WebP or GIF</small></>}
+                </div>
+                <input ref={imageRef} type="file" accept="image/*" style={{ display:'none' }} onChange={handleImageChange} />
+                {imagePreview && <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setImageFile(null); setImagePreview(''); }}>Remove image</button>}
+              </div>
+              <div className="form-group">
                 <label>Article content *</label>
                 <textarea required name="content" rows={12} defaultValue={editing?.content ?? ''} placeholder="Full article text. Use blank lines to separate paragraphs." />
               </div>
@@ -109,7 +141,7 @@ export default function AdminNews() {
               <tbody>
                 {articles.map(a => (
                   <tr key={a.id}>
-                    <td><b>{a.title}</b><small>{a.slug}</small></td>
+                    <td><div className="article-row-title">{a.featuredImage && <img src={a.featuredImage} alt="" />}<span><b>{a.title}</b><small>{a.slug}</small></span></div></td>
                     <td><span className={`badge badge-${a.status.toLowerCase()}`}>{a.status}</span></td>
                     <td>{new Date(a.updatedAt).toLocaleDateString()}</td>
                     <td>
@@ -130,7 +162,7 @@ export default function AdminNews() {
           </div>
         )}
       </div>
-      {toast && <div className="toast">{toast}</div>}
+      {toast && <div className="toast-msg">{toast}</div>}
     </>
   );
 }

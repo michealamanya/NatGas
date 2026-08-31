@@ -13,11 +13,21 @@ datasource db {
 // ==================== ENUMS ====================
 
 enum UserRole {
+  CUSTOMER
   SUPER_ADMIN
   ADMIN
   EDITOR
   HR
   CONTENT_MANAGER
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  OUT_FOR_DELIVERY
+  COMPLETED
+  CANCELLED
 }
 
 enum UserStatus {
@@ -101,6 +111,7 @@ model User {
   createdPages      Page[]
   createdBy         User?            @relation("UserCreatedBy", fields: [createdById], references: [id])
   createdUsers      User[]           @relation("UserCreatedBy")
+  orders            Order[]          @relation("CustomerOrders")
 
   @@map("users")
   @@index([email])
@@ -211,12 +222,53 @@ model Product {
   category         ProductCategory? @relation(fields: [categoryId], references: [id])
   createdBy        User?            @relation("ProductCreatedBy", fields: [createdById], references: [id])
   updatedBy        User?            @relation("ProductUpdatedBy", fields: [updatedById], references: [id])
+  orderItems       OrderItem[]
 
   @@map("products")
   @@index([slug])
   @@index([categoryId])
   @@index([status])
   @@index([displayOrder])
+}
+
+// ==================== CUSTOMER ORDER REQUESTS ====================
+
+model Order {
+  id              String      @id @default(uuid())
+  orderNumber     String      @unique @map("order_number")
+  customerId      String      @map("customer_id")
+  status          OrderStatus @default(PENDING)
+  deliveryAddress String      @map("delivery_address")
+  district        String
+  phone           String
+  notes           String?
+  staffNotes      String?     @map("staff_notes")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  customer        User        @relation("CustomerOrders", fields: [customerId], references: [id])
+  items           OrderItem[]
+
+  @@map("orders")
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String   @map("order_id")
+  productId   String   @map("product_id")
+  quantity    Int
+  productName String   @map("product_name")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+  @@index([orderId])
+  @@index([productId])
 }
 
 // ==================== SERVICES ====================

@@ -140,6 +140,7 @@ export interface User {
   role: string;
   status: string;
   lastLoginAt?: string;
+  phone?: string;
 }
 
 export interface DashboardStats {

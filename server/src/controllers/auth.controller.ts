@@ -98,6 +98,17 @@ export async function login(req: Request, res: Response): Promise<void> {
   );
 }
 
+// POST /api/auth/register - customer account for ordering only
+export async function registerCustomer(req: Request, res: Response): Promise<void> {
+  const { firstName, lastName, email, phone, password } = req.body as { firstName: string; lastName: string; email: string; phone: string; password: string };
+  if (await prisma.user.findUnique({ where: { email } })) throw new AppError('An account with this email already exists. Please sign in.', 409);
+  const username = `customer-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  const user = await prisma.user.create({ data: { firstName, lastName, email, phone, username, passwordHash: await hashPassword(password), role: 'CUSTOMER' } });
+  const token = await createSession(user.id, getClientIp(req), req.headers['user-agent']);
+  res.cookie(COOKIE_NAME, token, SESSION_COOKIE_OPTIONS);
+  res.status(201).json(successResponse({ user: toSafeUser(user) }, 'Account created. You can now submit your order request.'));
+}
+
 // POST /api/auth/logout
 export async function logout(req: AuthenticatedRequest, res: Response): Promise<void> {
   const token: string | undefined = req.cookies?.[COOKIE_NAME];

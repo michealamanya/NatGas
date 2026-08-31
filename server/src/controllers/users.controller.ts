@@ -14,7 +14,7 @@ import {
 import { sendWelcomeEmail } from '../services/email.service.js';
 import { createAuditLog } from '../services/audit.service.js';
 import { Prisma } from '@prisma/client';
-type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'HR' | 'CONTENT_MANAGER';
+type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'HR' | 'CONTENT_MANAGER' | 'CUSTOMER';
 type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING';
 import crypto from 'crypto';
 
@@ -237,6 +237,12 @@ export async function updateUserRole(req: AuthenticatedRequest, res: Response): 
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) throw new NotFoundError('User');
 
+  // Customer accounts can be supported (status and passwords) but cannot be
+  // converted into privileged staff accounts through the customer directory.
+  if (user.role === 'CUSTOMER' || role === 'CUSTOMER') {
+    throw new AppError('Customer accounts cannot be assigned staff roles', 400);
+  }
+
   // An ADMIN has elevated website-management access, including assignment of
   // operational roles, but cannot change the Super Administrator boundary.
   if (req.user!.role === 'ADMIN' && (user.role === 'SUPER_ADMIN' || role === 'SUPER_ADMIN')) {
@@ -285,6 +291,15 @@ export async function adminResetPassword(req: AuthenticatedRequest, res: Respons
   });
 
   res.status(200).json(successResponse(null, 'Password reset and sent to user email'));
+}
+
+export async function adminSetPassword(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+  if (!user) throw new NotFoundError('User');
+  if (user.role === 'SUPER_ADMIN' && req.user!.role !== 'SUPER_ADMIN') throw new AppError('Only a Super Administrator can change this password', 403);
+  await prisma.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(req.body.password), mustChangePassword: true } });
+  await createAuditLog({ userId:req.user!.id, action:'ADMIN_SET_PASSWORD', resource:'users', resourceId:user.id, ipAddress:getIp(req), userAgent:req.headers['user-agent'] });
+  res.json(successResponse(null, 'Password updated. The user must change it at next sign-in.'));
 }
 
 // DELETE /api/users/:id

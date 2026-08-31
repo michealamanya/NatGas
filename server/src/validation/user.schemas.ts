@@ -47,5 +47,9 @@ export const updateUserRoleSchema = z.object({
   role: z.nativeEnum(UserRole),
 });
 
+export const adminSetPasswordSchema = z.object({
+  password: z.string().min(8).regex(/[A-Z]/).regex(/[a-z]/).regex(/[0-9]/).regex(/[^A-Za-z0-9]/),
+});
+
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;

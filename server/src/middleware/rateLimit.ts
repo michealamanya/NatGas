@@ -1,5 +1,6 @@
 import rateLimit from 'express-rate-limit';
 import { errorResponse } from '../types/index.js';
+import { config } from '../config/index.js';
 
 const standardHandler = (message: string) =>
   rateLimit({
@@ -15,7 +16,10 @@ const standardHandler = (message: string) =>
  */
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  // Development tools and the Vite client make many harmless requests. Keep
+  // production protection while preventing local catalogue browsing lockouts.
+  max: config.isDevelopment ? 5000 : 100,
+  skip: (req) => req.path.startsWith('/uploads'),
   standardHeaders: true,
   legacyHeaders: false,
   handler: (_req, res) => {

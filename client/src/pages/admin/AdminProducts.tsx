@@ -15,8 +15,11 @@ export default function AdminProducts() {
   const [toast,      setToast]      = useState<Toast>(null);
   const [features,   setFeatures]   = useState<string[]>(['']);
   const imageRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
   const [imageFile, setImageFile]  = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [existingGallery, setExistingGallery] = useState<string[]>([]);
+  const [galleryFiles, setGalleryFiles] = useState<{ file: File; preview: string }[]>([]);
 
   const notify = (msg: string, type: 'success'|'error' = 'success') => {
     setToast({ msg, type });
@@ -37,7 +40,7 @@ export default function AdminProducts() {
   }, []);
 
   const openCreate = () => {
-    setEditing(null); setFeatures(['']); setImageFile(null); setImagePreview(''); setShowForm(true);
+    setEditing(null); setFeatures(['']); setImageFile(null); setImagePreview(''); setExistingGallery([]); setGalleryFiles([]); setShowForm(true);
   };
   const openEdit = (p: AdminProduct) => {
     setEditing(p);
@@ -45,6 +48,8 @@ export default function AdminProducts() {
     setFeatures(f.length ? f : ['']);
     setImagePreview(p.imageUrl ?? '');
     setImageFile(null);
+    setExistingGallery(Array.isArray(p.images) ? p.images as string[] : []);
+    setGalleryFiles([]);
     setShowForm(true);
   };
   const closeForm = () => { setShowForm(false); setEditing(null); };
@@ -55,6 +60,12 @@ export default function AdminProducts() {
     setImageFile(file);
     const url = URL.createObjectURL(file);
     setImagePreview(url);
+  };
+
+  const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []).map(file => ({ file, preview: URL.createObjectURL(file) }));
+    setGalleryFiles(current => [...current, ...files]);
+    e.target.value = '';
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -82,7 +93,27 @@ export default function AdminProducts() {
       try {
         const r = await api<{ url: string }>('/admin/media/upload', { method: 'POST', body: imgFd, headers: {} });
         payload.imageUrl = r.data.url;
-      } catch { /* skip image on failure */ }
+      } catch (err) {
+        notify(err instanceof Error ? `Image upload failed: ${err.message}` : 'Image upload failed');
+        return;
+      }
+    }
+    if (galleryFiles.length) {
+      try {
+        const uploaded = await Promise.all(galleryFiles.map(async ({ file }) => {
+          const imageData = new FormData();
+          imageData.append('file', file);
+          imageData.append('folder', 'products');
+          const result = await api<{ url: string }>('/admin/media/upload', { method: 'POST', body: imageData, headers: {} });
+          return result.data.url;
+        }));
+        payload.images = [...existingGallery, ...uploaded];
+      } catch (err) {
+        notify(err instanceof Error ? `Gallery upload failed: ${err.message}` : 'Gallery upload failed', 'error');
+        return;
+      }
+    } else if (editing) {
+      payload.images = existingGallery;
     }
     try {
       if (editing) {
@@ -214,6 +245,21 @@ export default function AdminProducts() {
                   <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setImageFile(null); setImagePreview(''); }}>
                     Remove image
                   </button>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label>Additional product images</label>
+                <p className="field-hint">Add multiple views for industrial equipment, installations or technical details.</p>
+                <div className="upload-zone gallery-upload" onClick={() => galleryRef.current?.click()}>
+                  <CheckCircle2 size={20} /><span>Add gallery images</span><small>You can select more than one image.</small>
+                </div>
+                <input ref={galleryRef} type="file" accept="image/*" multiple style={{ display:'none' }} onChange={handleGalleryChange} />
+                {(existingGallery.length + galleryFiles.length) > 0 && (
+                  <div className="gallery-preview-grid">
+                    {existingGallery.map((url, index) => <div className="gallery-preview" key={url}><img src={url} alt="" /><button type="button" onClick={() => setExistingGallery(images => images.filter((_, i) => i !== index))}><X size={13} /></button></div>)}
+                    {galleryFiles.map(({ preview }, index) => <div className="gallery-preview" key={preview}><img src={preview} alt="" /><button type="button" onClick={() => setGalleryFiles(files => files.filter((_, i) => i !== index))}><X size={13} /></button></div>)}
+                  </div>
                 )}
               </div>
 

@@ -9,18 +9,21 @@ import {
   forgotPassword,
   resetPassword,
   changePassword,
+  registerCustomer,
 } from '../controllers/auth.controller.js';
 import {
   loginSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
   changePasswordSchema,
+  customerRegisterSchema,
 } from '../validation/auth.schemas.js';
 
 const router: Router = Router();
 
 // POST /api/auth/login - rate limited
 router.post('/login', authLimiter, validate(loginSchema), login);
+router.post('/register', authLimiter, validate(customerRegisterSchema), registerCustomer);
 
 // POST /api/auth/logout
 router.post('/logout', logout);

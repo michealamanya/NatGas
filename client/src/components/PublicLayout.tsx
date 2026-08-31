@@ -97,7 +97,7 @@ export default function PublicLayout() {
             </div>
           </div>
 
-          <NavLink to="/contact" className="nav-enquire">Get a Quote</NavLink>
+          <NavLink to="/contact" className="nav-enquire">Order Gas</NavLink>
         </div>
       </nav>
 

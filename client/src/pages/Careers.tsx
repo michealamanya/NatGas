@@ -229,7 +229,7 @@ export function JobDetail() {
                             <span style={{ color: 'var(--green)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
                               <CheckCircle2 size={15} /> {cvFile.name}
                               <button type="button" onClick={e => { e.stopPropagation(); setCvFile(null); }}
-                                style={{ background: 'none', border: 0, color: '#c0392b', cursor: 'pointer', display: 'flex' }}>
+                                style={{ background: 'none', border: 0, color: '#9b5b00', cursor: 'pointer', display: 'flex' }}>
                                 <X size={13} />
                               </button>
                             </span>

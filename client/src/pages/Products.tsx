@@ -201,8 +201,8 @@ export function ProductDetail() {
               <h1 className="pd-title">{product.name}</h1>
 
               <div className="pd-avail">
-                <span style={{ width:8, height:8, borderRadius:'50%', background: product.isAvailable ? '#14a050' : '#c0392b', display:'inline-block' }} />
-                <span style={{ fontSize:13, fontWeight:600, color: product.isAvailable ? '#14a050' : '#c0392b' }}>
+                <span style={{ width:8, height:8, borderRadius:'50%', background: product.isAvailable ? '#08705a' : '#9b5b00', display:'inline-block' }} />
+                <span style={{ fontSize:13, fontWeight:600, color: product.isAvailable ? '#08705a' : '#9b5b00' }}>
                   {product.isAvailable ? 'In stock' : 'Out of stock'}
                 </span>
                 {product.isFeatured && (

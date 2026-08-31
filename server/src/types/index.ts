@@ -69,6 +69,7 @@ export function errorResponse(message: string, errors?: Record<string, string[]>
 
 // Role hierarchy for permission checks
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
+  CUSTOMER: 0,
   SUPER_ADMIN: 100,
   ADMIN: 80,
   CONTENT_MANAGER: 60,
@@ -82,6 +83,7 @@ export function hasMinimumRole(userRole: UserRole, requiredRole: UserRole): bool
 
 // Role-based permission matrix
 export const ROLE_PERMISSIONS = {
+  CUSTOMER: [],
   SUPER_ADMIN: ['*'],
   ADMIN: [
     'users:read', 'users:write',

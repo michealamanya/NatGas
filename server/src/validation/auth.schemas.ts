@@ -13,6 +13,11 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
+export const customerRegisterSchema = z.object({
+  firstName: z.string().min(1).max(80), lastName: z.string().min(1).max(80),
+  email: z.string().email().toLowerCase(), phone: z.string().min(7).max(30), password: strongPassword,
+});
+
 export const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address').toLowerCase(),
 });

@@ -16,6 +16,10 @@ const app: express.Express = express();
 // ==================== Security headers ====================
 app.use(
   helmet({
+    // The Vite app runs on port 5173 in development while local media is served
+    // by this API on port 3001. Uploaded public images must be embeddable by
+    // the website, so they cannot use Helmet's restrictive same-origin policy.
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],

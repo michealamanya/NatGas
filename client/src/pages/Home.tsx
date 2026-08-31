@@ -1,10 +1,12 @@
 import {
   ArrowRight, Award, CheckCircle2, ChevronRight,
-  Globe, HardHat, MapPin, Phone, ShieldCheck, Truck, Wrench,
+  CreditCard, Globe, HardHat, MapPin, MessageCircle, Package, Phone, ScanLine,
+  Search, ShieldCheck, Truck, Wrench,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { api, Job, NewsArticle, Product, ProductCategory } from '../api/client';
+import { Link, useNavigate } from 'react-router-dom';
+import { api, Job, Location, NewsArticle, Product, ProductCategory } from '../api/client';
+import { addToCart } from '../lib/cart';
 
 const COLORS = ['cyl-bg-0','cyl-bg-1','cyl-bg-2','cyl-bg-3','cyl-bg-4'];
 
@@ -13,12 +15,15 @@ export default function Home() {
   const [products,   setProducts]   = useState<Product[]>([]);
   const [news,       setNews]        = useState<NewsArticle[]>([]);
   const [jobs,       setJobs]        = useState<Job[]>([]);
+  const [locations,  setLocations]   = useState<Location[]>([]);
+  const [district,   setDistrict]    = useState('');
   const [activeTab,  setActiveTab]   = useState('');
 
   useEffect(() => {
     api<ProductCategory[]>('/products/categories').then(r => setCategories(r.data ?? [])).catch(() => undefined);
     api<NewsArticle[]>('/news?limit=3').then(r => setNews(r.data ?? [])).catch(() => undefined);
     api<Job[]>('/jobs?limit=3').then(r => setJobs(r.data ?? [])).catch(() => undefined);
+    api<Location[]>('/locations').then(r => setLocations(r.data ?? [])).catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -41,7 +46,7 @@ export default function Home() {
               Authorized LPG Distributor &amp; Technical Services · Uganda
             </div>
             <h1 className="hero-h1">
-              Reliable LPG Energy &amp;<br /><em>Expert Technical Services</em>
+              Safe LPG systems for<br /><em>homes, business and industry.</em>
             </h1>
             <p className="hero-sub">
               Certified LPG distribution, system design, installation, maintenance
@@ -49,9 +54,9 @@ export default function Home() {
             </p>
             <div className="hero-btns">
               <Link className="btn btn-primary" to="/products">
-                Browse products <ArrowRight size={14} />
+                Order now <ArrowRight size={14} />
               </Link>
-              <Link className="btn btn-wht" to="/contact">Get a free quote</Link>
+              <Link className="btn btn-wht" to="/locations">Find a dealer</Link>
             </div>
           </div>
 
@@ -159,6 +164,14 @@ export default function Home() {
       </section>
 
       {/* ── Services ── */}
+      <section className="section home-value-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">WHY CHOOSE NATGAS</span><h2>Energy delivered with safety and care.</h2></div></div><div className="home-value-grid">{[{icon:ShieldCheck,title:'Safety first',text:'Certified cylinders, safe handling guidance and trained support.'},{icon:Truck,title:'Reliable supply',text:'Dependable LPG availability and convenient delivery coordination.'},{icon:CheckCircle2,title:'Genuine cylinders',text:'Quality-checked NATGAS products and trusted accessories.'},{icon:MessageCircle,title:'Customer support',text:'Helpful assistance for homes, dealers and commercial customers.'}].map(({icon:Icon,title,text}) => <article key={title}><Icon size={24}/><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>
+
+      <section className="section home-order-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">HOW TO ORDER</span><h2>Gas delivered in four clear steps.</h2></div><Link className="btn btn-dark" to="/contact">Order Gas <ArrowRight size={14}/></Link></div><div className="order-steps">{[{icon:Package,title:'Select product',text:'Choose your cylinder or refill size.'},{icon:MapPin,title:'Share location',text:'Tell us your district and delivery point.'},{icon:CreditCard,title:'Confirm payment',text:'Confirm the agreed payment method.'},{icon:Truck,title:'Receive delivery',text:'Get your LPG supply safely and conveniently.'}].map(({icon:Icon,title,text},index) => <article key={title}><span>{index + 1}</span><Icon size={23}/><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>
+
+      <section className="section home-utility-section"><div className="wrap home-utility-grid"><article className="verify-card"><ScanLine size={30}/><div><span className="chip-sm">CYLINDER VERIFICATION</span><h2>Check your NATGAS cylinder.</h2><p>Have a serial number or QR code? Our team can confirm authorised supply and safety information.</p><Link className="btn btn-primary" to="/contact">Verify a cylinder <ArrowRight size={14}/></Link></div></article><article className="safety-card"><ShieldCheck size={30}/><div><span className="chip-sm">LPG SAFETY</span><h2>Know what to do.</h2><ul><li>Keep cylinders upright in a ventilated space.</li><li>Check hose connections with soapy water—never a flame.</li><li>If you smell gas, close the valve, ventilate and call NATGAS.</li></ul><Link className="link-all" to="/faq">Read safety guidance <ArrowRight size={14}/></Link></div></article></div></section>
+
+      <section className="section dealer-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">DEALER & OUTLET LOCATOR</span><h2>Find LPG near you.</h2></div></div><div className="locator-search"><Search size={18}/><input value={district} onChange={event => setDistrict(event.target.value)} placeholder="Search by district or outlet name" aria-label="Search dealer outlets"/></div><div className="dealer-grid">{locations.filter(location => `${location.name} ${location.district} ${location.region}`.toLowerCase().includes(district.toLowerCase())).slice(0,3).map(location => <article key={location.id}><MapPin size={20}/><h3>{location.name}</h3><p>{location.address}, {location.district}</p><a href={`tel:${location.phone ?? ''}`}>{location.phone ?? 'Contact outlet'}</a></article>)}{!locations.length && <p>Outlet information will appear here as it is added in the CMS.</p>}</div></div></section>
+
       <section className="section" style={{ background:'var(--cream)', paddingTop:48, paddingBottom:48 }}>
         <div className="wrap">
           <div className="section-head">
@@ -187,6 +200,10 @@ export default function Home() {
       </section>
 
       {/* ── Latest news ── */}
+      <section className="section home-review-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">CUSTOMER FEEDBACK</span><h2>Trusted by homes and businesses.</h2></div></div><div className="review-grid"><blockquote>“The delivery coordination was clear, and the safety guidance was genuinely useful.”<footer>Household customer, Kampala</footer></blockquote><blockquote>“NATGAS helped us plan a more reliable LPG supply for our kitchen operations.”<footer>Commercial customer, Entebbe</footer></blockquote><blockquote>“Professional, responsive and careful about every installation detail.”<footer>Business customer, Central Region</footer></blockquote></div><p className="review-note">Testimonials are displayed only after customer confirmation; these representative placeholders can be replaced with approved reviews in the CMS.</p></div></section>
+
+      <section className="business-cta"><div className="wrap"><div><span className="chip-sm">PARTNER WITH NATGAS</span><h2>Grow your business with dependable LPG supply.</h2><p>Become an authorised dealer or request a commercial and bulk-LPG quotation.</p></div><div className="cta-btns"><Link className="btn btn-primary" to="/contact">Become a dealer</Link><Link className="btn btn-wht" to="/contact">Request a business quote</Link></div></div></section>
+
       {news.length > 0 && (
         <section className="section" style={{ background:'#fff' }}>
           <div className="wrap">
@@ -244,10 +261,10 @@ export default function Home() {
 
 /* ── Reusable cards ─ */
 export function ProductCard({ p, idx }: { p: Product; idx: number }) {
-  const features = Array.isArray(p.features) ? p.features as string[] : [];
+  const navigate = useNavigate();
   return (
-    <Link to={`/products/${p.slug}`} className="pcard" style={{ textDecoration:'none' }}>
-      <div className={`pcard-img ${p.imageUrl ? '' : COLORS[idx % 5]}`}>
+    <article className="pcard">
+      <Link to={`/products/${p.slug}`} className={`pcard-img ${p.imageUrl ? '' : COLORS[idx % 5]}`}>
         {p.imageUrl
           ? <img src={p.imageUrl} alt={p.name} loading="lazy" />
           : <div className="cyl-placeholder">
@@ -257,24 +274,21 @@ export function ProductCard({ p, idx }: { p: Product; idx: number }) {
         }
         {!p.isAvailable && <div className="pcard-badge-out">Out of stock</div>}
         {p.isFeatured && p.isAvailable && <span className="pcard-badge-feat">Featured</span>}
-      </div>
+      </Link>
       <div className="pcard-body">
-        <span className="pcard-cat">{p.category?.name ?? 'LPG PRODUCT'}</span>
-        <h3 className="pcard-name">{p.name}</h3>
-        <p className="pcard-desc">{p.shortDescription ?? p.description ?? ''}</p>
-        {features.slice(0,2).map(f => (
-          <div key={f} style={{ fontSize:11, color:'var(--muted)', display:'flex', alignItems:'flex-start', gap:5, marginTop:3 }}>
-            <CheckCircle2 size={10} style={{ color:'var(--green-3)', flexShrink:0, marginTop:2 }} />{f}
-          </div>
-        ))}
+        <div className="pcard-topline">
+          <span className="pcard-cat">{p.category?.name ?? 'LPG PRODUCT'}</span>
+          {p.cylinderSize && <span className="pcard-size">{p.cylinderSize}</span>}
+        </div>
+        <Link to={`/products/${p.slug}`} className="pcard-name">{p.name}</Link>
         <div className="pcard-footer">
           <span className={`pcard-avail ${p.isAvailable ? 'avail-yes' : 'avail-no'}`}>
             {p.isAvailable ? 'In stock' : 'Unavailable'}
           </span>
-          <span className="pcard-link">View <ArrowRight size={11} /></span>
+          <button className="pcard-order" disabled={!p.isAvailable} onClick={() => { addToCart(p); navigate('/order'); }}>Add to order <ArrowRight size={12} /></button>
         </div>
       </div>
-    </Link>
+    </article>
   );
 }
 

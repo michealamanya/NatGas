@@ -83,6 +83,7 @@ import {
   updateUserStatus,
   updateUserRole,
   adminResetPassword,
+  adminSetPassword,
   deleteUser,
 } from '../controllers/users.controller.js';
 
@@ -97,7 +98,9 @@ import {
 import { createNewsArticleSchema, updateNewsArticleSchema } from '../validation/news.schemas.js';
 import { createJobSchema, updateJobSchema, updateApplicationStatusSchema } from '../validation/job.schemas.js';
 import { updateContactStatusSchema } from '../validation/contact.schemas.js';
-import { createUserSchema, updateUserSchema, updateUserStatusSchema, updateUserRoleSchema } from '../validation/user.schemas.js';
+import { createUserSchema, updateUserSchema, updateUserStatusSchema, updateUserRoleSchema, adminSetPasswordSchema } from '../validation/user.schemas.js';
+import { adminListOrders, adminUpdateOrder } from '../controllers/orders.controller.js';
+import { updateOrderSchema } from '../validation/order.schemas.js';
 
 const router: Router = Router();
 
@@ -112,6 +115,8 @@ router.use(requireAuth);
 
 // ==================== Dashboard ====================
 router.get('/dashboard', requireRole('ADMIN', 'SUPER_ADMIN'), getDashboard);
+router.get('/orders', requireRole('ADMIN', 'SUPER_ADMIN'), adminListOrders);
+router.put('/orders/:id', requireRole('ADMIN', 'SUPER_ADMIN'), validate(updateOrderSchema), adminUpdateOrder);
 
 // ==================== Users ====================
 router.get('/users', requireRole('ADMIN', 'SUPER_ADMIN'), listUsers);
@@ -121,6 +126,7 @@ router.put('/users/:id', requireRole('ADMIN', 'SUPER_ADMIN'), validate(updateUse
 router.put('/users/:id/status', requireRole('ADMIN', 'SUPER_ADMIN'), validate(updateUserStatusSchema), updateUserStatus);
 router.put('/users/:id/role', requireRole('ADMIN', 'SUPER_ADMIN'), validate(updateUserRoleSchema), updateUserRole);
 router.post('/users/:id/reset-password', requireRole('ADMIN', 'SUPER_ADMIN'), adminResetPassword);
+router.put('/users/:id/password', requireRole('ADMIN', 'SUPER_ADMIN'), validate(adminSetPasswordSchema), adminSetPassword);
 router.delete('/users/:id', requireRole('SUPER_ADMIN'), deleteUser);
 
 // ==================== Products ====================

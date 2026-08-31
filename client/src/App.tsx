@@ -18,11 +18,15 @@ const Contact     = lazy(() => import('./pages/StaticPages').then(m => ({ defaul
 const FAQ         = lazy(() => import('./pages/StaticPages').then(m => ({ default: m.FAQ })));
 const Privacy     = lazy(() => import('./pages/StaticPages').then(m => ({ default: m.Privacy })));
 const Terms       = lazy(() => import('./pages/StaticPages').then(m => ({ default: m.Terms })));
+const OrderCart   = lazy(() => import('./pages/OrderCart'));
+const CustomerAccount = lazy(() => import('./pages/CustomerAccount'));
 
 // ── Admin pages (lazy loaded) ─────────────────────────────────────────────────
 const Login          = lazy(() => import('./pages/admin/Login'));
 const Dashboard      = lazy(() => import('./pages/admin/Dashboard'));
 const AdminProducts  = lazy(() => import('./pages/admin/AdminProducts'));
+const AdminOrders    = lazy(() => import('./pages/admin/AdminOrders'));
+const AdminServices  = lazy(() => import('./pages/admin/AdminServices'));
 const AdminNews      = lazy(() => import('./pages/admin/AdminNews'));
 const AdminJobs      = lazy(() => import('./pages/admin/AdminJobs'));
 const AdminMessages  = lazy(() => import('./pages/admin/AdminMessages'));
@@ -89,6 +93,8 @@ export default function App() {
           <Route path="faq"          element={<FAQ />} />
           <Route path="privacy"      element={<Privacy />} />
           <Route path="terms"        element={<Terms />} />
+          <Route path="order"        element={<OrderCart />} />
+          <Route path="account"      element={<CustomerAccount />} />
         </Route>
 
         {/* ── Admin login (no layout) ─────────────────────── */}
@@ -113,6 +119,8 @@ export default function App() {
           <Route index element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="products"  element={<AdminProducts />} />
+          <Route path="orders"    element={<AdminOrders />} />
+          <Route path="services"  element={<AdminServices />} />
           <Route path="news"      element={<AdminNews />} />
           <Route path="jobs"      element={<AdminJobs />} />
           <Route path="messages"  element={<AdminMessages />} />

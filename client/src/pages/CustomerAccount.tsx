@@ -1,0 +1,9 @@
+import { FormEvent, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { api } from '../api/client';
+
+export default function CustomerAccount() {
+  const [mode, setMode] = useState<'register'|'login'>('register'); const [error, setError] = useState(''); const [params] = useSearchParams(); const navigate = useNavigate();
+  const submit = async (e: FormEvent<HTMLFormElement>) => { e.preventDefault(); const fd = new FormData(e.currentTarget); const body = Object.fromEntries(fd); try { await api(mode === 'register' ? '/auth/register' : '/auth/login', { method:'POST', body:JSON.stringify(body) }); navigate(params.get('next') ?? '/order'); } catch (err) { setError(err instanceof Error ? err.message : 'Unable to continue'); } };
+  return <section className="section"><div className="account-box admin-card admin-card-body"><span className="chip-sm">CUSTOMER ACCOUNT</span><h1>{mode === 'register' ? 'Create your order account' : 'Welcome back'}</h1><p>Sign in securely to submit LPG order requests and receive confirmation updates.</p><div className="jobs-tabs"><button className={`jobs-tab ${mode==='register'?'active':''}`} onClick={() => setMode('register')}>Create account</button><button className={`jobs-tab ${mode==='login'?'active':''}`} onClick={() => setMode('login')}>Sign in</button></div><form className="order-form" onSubmit={submit}>{error && <p className="form-err">{error}</p>}{mode==='register' && <><label>First name<input required name="firstName"/></label><label>Last name<input required name="lastName"/></label><label>Phone number<input required name="phone"/></label></>}<label>Email address<input required type="email" name="email"/></label><label>Password<input required type="password" name="password" minLength={8}/></label><button className="btn btn-primary">{mode==='register'?'Create account and continue':'Sign in and continue'}</button></form></div></section>;
+}

@@ -2,9 +2,9 @@ import {
   ArrowRight, CheckCircle2, Clock, Flame, HardHat,
   Mail, MapPin, Phone, Search, ShieldCheck, Wrench,
 } from 'lucide-react';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../api/client';
+import { api, Service as ManagedService } from '../api/client';
 
 /* ─── About ─────────────────────────────────────────────────────────────── */
 export function About() {
@@ -91,6 +91,21 @@ export function About() {
         </div>
       </section>
 
+      <section className="partners-section" aria-labelledby="partners-title">
+        <div className="wrap">
+          <div className="partners-heading">
+            <span className="chip-sm">TRUSTED NETWORK</span>
+            <h2 id="partners-title">Working with industry leaders.</h2>
+            <p>Our solutions are supported by trusted product, engineering and hospitality partners.</p>
+          </div>
+          <div className="partners-grid" aria-label="Selected partners">
+            {['TotalEnergies', 'STABEX International', 'Shell', 'Serena Hotels', 'Royal Van Zanten'].map(partner => (
+              <div className="partner-mark" key={partner}>{partner}</div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <div className="cta-band">
         <div className="cta-wrap">
           <div>
@@ -108,6 +123,10 @@ export function About() {
 
 /* ─── Services ───────────────────────────────────────────────────────────── */
 export function Services() {
+  const [managedServices, setManagedServices] = useState<ManagedService[]>([]);
+  useEffect(() => {
+    api<ManagedService[]>('/services').then(result => setManagedServices(result.data ?? [])).catch(() => undefined);
+  }, []);
   const SERVICES = [
     { icon: Flame,       title: 'Authorized LPG Products Distribution',        desc: 'The number one authorized distributor of all LPG products — reliable, certified, nationwide.' },
     { icon: ShieldCheck, title: 'Accessories & Equipment Supply',               desc: 'Flanges, fittings, brass adaptors, regulators and all LPG accessories from certified sources.' },
@@ -135,6 +154,14 @@ export function Services() {
 
       <section className="section" style={{ background: '#fff' }}>
         <div className="wrap">
+          {managedServices.length > 0 && <div className="svc-grid managed-services">
+            {managedServices.map(service => (
+              <article className="svc-card" key={service.id}>
+                {service.imageUrl && <img className="svc-card-image" src={service.imageUrl} alt={service.name} />}
+                <div className="svc-card-copy"><h3>{service.name}</h3><p>{service.shortDesc ?? service.description}</p></div>
+              </article>
+            ))}
+          </div>}
           <div className="svc-grid">
             {SERVICES.map(({ icon: Icon, title, desc }) => (
               <div className="svc-card" key={title}>

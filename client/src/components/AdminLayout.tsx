@@ -8,6 +8,8 @@ import { api, User } from '../api/client';
 const NAV = [
   { icon: LayoutDashboard, label: 'Overview',   to: '/admin/dashboard' },
   { icon: Package,         label: 'Products',   to: '/admin/products'  },
+  { icon: Package,         label: 'Services',   to: '/admin/services'  },
+  { icon: Package,         label: 'Orders',     to: '/admin/orders'    },
   { icon: FileText,        label: 'News',        to: '/admin/news'      },
   { icon: Briefcase,       label: 'Jobs',        to: '/admin/jobs'      },
   { icon: MessageSquare,   label: 'Messages',    to: '/admin/messages'  },
@@ -61,7 +63,7 @@ export default function AdminLayout({ user, onLogout }: { user: User; onLogout?:
           >
             <Globe size={15} /> View website ↗
           </a>
-          <button className="anav-link" style={{ color: '#f08888' }} onClick={logout}>
+          <button className="anav-link" style={{ color: '#f5b120' }} onClick={logout}>
             <LogOut size={15} /> Sign out
           </button>
         </div>

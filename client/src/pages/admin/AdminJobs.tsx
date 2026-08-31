@@ -1,4 +1,4 @@
-import { Briefcase, Loader2, Plus, X } from 'lucide-react';
+import { Briefcase, ClipboardList, Loader2, Plus, Users, X } from 'lucide-react';
 import { FormEvent, useEffect, useState } from 'react';
 import { api, Job } from '../../api/client';
 
@@ -36,7 +36,9 @@ export default function AdminJobs() {
       responsibilities:fd.get('responsibilities'),
       requirements:    fd.get('requirements'),
       benefits:        fd.get('benefits'),
-      deadline:        fd.get('deadline') || undefined,
+      // Native date inputs return YYYY-MM-DD, while the secured API requires
+      // an ISO timestamp. Send null to explicitly clear a previous deadline.
+      deadline:        fd.get('deadline') ? new Date(`${fd.get('deadline')}T23:59:59.999Z`).toISOString() : null,
       status:          fd.get('status'),
       isFeatured:      fd.get('isFeatured') === 'on',
     };
@@ -70,7 +72,7 @@ export default function AdminJobs() {
 
   return (
     <>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom: 24 }}>
+      <div className="jobs-page-header">
         <div>
           <h1 className="admin-page-title">Jobs &amp; Applications</h1>
           <p className="admin-page-sub">Manage vacancies and review applicants.</p>
@@ -81,23 +83,23 @@ export default function AdminJobs() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display:'flex', gap: 8, marginBottom: 24 }}>
-        <button className={`btn btn-sm ${tab==='jobs' ? 'btn-green' : 'btn-outline'}`} onClick={() => setTab('jobs')}>
+      <div className="jobs-tabs" role="tablist" aria-label="Jobs workspace">
+        <button className={`jobs-tab ${tab==='jobs' ? 'active' : ''}`} onClick={() => setTab('jobs')}>
           <Briefcase size={13} /> Vacancies
         </button>
-        <button className={`btn btn-sm ${tab==='apps' ? 'btn-green' : 'btn-outline'}`} onClick={() => setTab('apps')}>
-          Applications
+        <button className={`jobs-tab ${tab==='apps' ? 'active' : ''}`} onClick={() => setTab('apps')}>
+          <Users size={13} /> Applications
         </button>
       </div>
 
       {showForm && (
-        <div className="admin-card" style={{ marginBottom: 28 }}>
+        <div className="admin-card jobs-form-card">
           <div className="admin-card-header">
             <h3>{editing ? 'Edit job' : 'Post new job'}</h3>
             <button style={{ background:'none', border:0, cursor:'pointer' }} onClick={closeForm}><X size={18} /></button>
           </div>
           <div className="admin-card-body">
-            <form onSubmit={handleSubmit}>
+            <form className="jobs-form" onSubmit={handleSubmit}>
               <div className="form-row-2">
                 <div className="form-group">
                   <label>Job title *</label>
@@ -175,8 +177,8 @@ export default function AdminJobs() {
       )}
 
       {tab === 'jobs' && (
-        <div className="admin-card">
-          <div className="admin-card-header"><h3>Vacancies ({jobs.length})</h3></div>
+        <div className="admin-card jobs-card">
+          <div className="admin-card-header"><h3><Briefcase size={16} /> Vacancies <span>{jobs.length}</span></h3><p>Publish and manage current openings.</p></div>
           {loading ? (
             <div className="loading-state"><Loader2 size={22} className="spin" /></div>
           ) : (
@@ -214,7 +216,7 @@ export default function AdminJobs() {
       )}
 
       {tab === 'apps' && <ApplicationsTab />}
-      {toast && <div className="toast">{toast}</div>}
+      {toast && <div className="toast-msg">{toast}</div>}
     </>
   );
 }
@@ -235,8 +237,8 @@ function ApplicationsTab() {
   };
 
   return (
-    <div className="admin-card">
-      <div className="admin-card-header"><h3>Applications ({apps.length})</h3></div>
+    <div className="admin-card jobs-card">
+      <div className="admin-card-header"><h3><ClipboardList size={16} /> Applications <span>{apps.length}</span></h3><p>Review incoming candidate submissions.</p></div>
       {loading ? (
         <div className="loading-state"><Loader2 size={22} className="spin" /></div>
       ) : (
