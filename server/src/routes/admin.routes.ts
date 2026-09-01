@@ -72,6 +72,7 @@ import {
   getAllSettings,
   updateSettings,
   updateSetting,
+  restorePresentationDefaults,
 } from '../controllers/settings.controller.js';
 import { listAuditLogs } from '../controllers/audit.controller.js';
 import { getDashboard } from '../controllers/dashboard.controller.js';
@@ -201,6 +202,7 @@ router.delete('/pages/:id', requireRole('ADMIN', 'SUPER_ADMIN'), deletePage);
 // ==================== Settings ====================
 router.get('/settings', requireRole('ADMIN', 'SUPER_ADMIN'), getAllSettings);
 router.put('/settings', requireRole('ADMIN', 'SUPER_ADMIN'), updateSettings);
+router.post('/settings/restore-defaults', requireRole('ADMIN', 'SUPER_ADMIN'), restorePresentationDefaults);
 router.put('/settings/:key', requireRole('ADMIN', 'SUPER_ADMIN'), updateSetting);
 
 // ==================== Audit Logs ====================

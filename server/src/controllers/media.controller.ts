@@ -19,6 +19,19 @@ function getIp(req: AuthenticatedRequest): string {
   return (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
 }
 
+// GET /api/media?folder=gallery|team
+// Only curated public folders are exposed without a staff session.
+export async function listPublicMedia(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const folder = String(req.query.folder ?? 'gallery');
+  if (!['gallery', 'team'].includes(folder)) throw new AppError('Unknown public media collection', 400);
+  const media = await prisma.media.findMany({
+    where: { folder, mimeType: { startsWith: 'image/' } },
+    select: { id: true, url: true, altText: true, caption: true, width: true, height: true, createdAt: true },
+    orderBy: { createdAt: 'desc' },
+  });
+  res.status(200).json(successResponse(media));
+}
+
 // POST /api/admin/media/upload
 export async function uploadMedia(req: AuthenticatedRequest, res: Response): Promise<void> {
   const file = (req as AuthenticatedRequest & { file?: Express.Multer.File }).file;

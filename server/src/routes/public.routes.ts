@@ -27,6 +27,7 @@ import { listLocations } from '../controllers/locations.controller.js';
 import { listFaqs } from '../controllers/faqs.controller.js';
 import { getPageBySlug } from '../controllers/pages.controller.js';
 import { getPublicSettings } from '../controllers/settings.controller.js';
+import { listPublicMedia } from '../controllers/media.controller.js';
 import { createOrder, listMyOrders } from '../controllers/orders.controller.js';
 import { requireAuth } from '../middleware/auth.js';
 import { createOrderSchema } from '../validation/order.schemas.js';
@@ -74,5 +75,8 @@ router.get('/pages/:slug', getPageBySlug);
 
 // ==================== Settings (public) ====================
 router.get('/settings/public', getPublicSettings);
+
+// ==================== Curated media ====================
+router.get('/media', listPublicMedia);
 
 export default router;

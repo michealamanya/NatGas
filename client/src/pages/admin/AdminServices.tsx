@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { ImagePlus, Pencil, Plus, X } from 'lucide-react';
+import { ImagePlus, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { api, Service } from '../../api/client';
 
 export default function AdminServices() {
@@ -76,6 +76,19 @@ export default function AdminServices() {
     }
   };
 
+  const remove = async (service: Service) => {
+    if (!window.confirm(`Delete “${service.name}”? This cannot be undone.`)) return;
+    setError('');
+    try {
+      const response = await api(`/admin/services/${service.id}`, { method: 'DELETE' });
+      if (editing?.id === service.id) clearForm();
+      setNotice(response.message ?? 'Service deleted.');
+      await load();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to delete service.');
+    }
+  };
+
   return <div>
     <div className="admin-page-head">
       <div><h1 className="admin-page-title">Technical services</h1><p className="admin-page-sub">Create, edit and illustrate the services shown to customers.</p></div>
@@ -99,7 +112,7 @@ export default function AdminServices() {
     <div className="product-grid product-grid-3">
       {services.map(service => <article className="ncard" key={service.id}>
         {service.imageUrl && <div className="ncard-img"><img src={service.imageUrl} alt={service.name} /></div>}
-        <div className="ncard-body"><h3>{service.name}</h3><p>{service.shortDesc ?? service.description}</p><button className="btn btn-outline" onClick={() => startEdit(service)}><Pencil size={14} /> Edit service</button></div>
+        <div className="ncard-body"><h3>{service.name}</h3><p>{service.shortDesc ?? service.description}</p><div className="admin-form-actions"><button className="btn btn-outline" onClick={() => startEdit(service)}><Pencil size={14} /> Edit</button><button className="btn btn-outline" onClick={() => remove(service)}><Trash2 size={14} /> Delete</button></div></div>
       </article>)}
     </div>
   </div>;

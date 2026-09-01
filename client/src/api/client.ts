@@ -64,6 +64,16 @@ export interface Service {
   status: string;
 }
 
+export interface MediaItem {
+  id: string;
+  url: string;
+  altText?: string;
+  caption?: string;
+  width?: number;
+  height?: number;
+  createdAt: string;
+}
+
 export interface NewsArticle {
   id: string;
   title: string;

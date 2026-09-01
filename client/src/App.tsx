@@ -20,6 +20,7 @@ const Privacy     = lazy(() => import('./pages/StaticPages').then(m => ({ defaul
 const Terms       = lazy(() => import('./pages/StaticPages').then(m => ({ default: m.Terms })));
 const OrderCart   = lazy(() => import('./pages/OrderCart'));
 const CustomerAccount = lazy(() => import('./pages/CustomerAccount'));
+const Media       = lazy(() => import('./pages/Media'));
 
 // ── Admin pages (lazy loaded) ─────────────────────────────────────────────────
 const Login          = lazy(() => import('./pages/admin/Login'));
@@ -27,12 +28,14 @@ const Dashboard      = lazy(() => import('./pages/admin/Dashboard'));
 const AdminProducts  = lazy(() => import('./pages/admin/AdminProducts'));
 const AdminOrders    = lazy(() => import('./pages/admin/AdminOrders'));
 const AdminServices  = lazy(() => import('./pages/admin/AdminServices'));
+const AdminMedia     = lazy(() => import('./pages/admin/AdminMedia'));
 const AdminNews      = lazy(() => import('./pages/admin/AdminNews'));
 const AdminJobs      = lazy(() => import('./pages/admin/AdminJobs'));
 const AdminMessages  = lazy(() => import('./pages/admin/AdminMessages'));
 const AdminUsers     = lazy(() => import('./pages/admin/AdminUsers'));
 const AdminAudit     = lazy(() => import('./pages/admin/AdminAudit'));
 const AdminSettings  = lazy(() => import('./pages/admin/AdminSettings'));
+const AdminExperience = lazy(() => import('./pages/admin/AdminExperience'));
 const AdminPlaceholder = lazy(() => import('./pages/admin/AdminPlaceholder'));
 
 // ── Spinner ────────────────────────────────────────────────────────────────────
@@ -85,6 +88,7 @@ export default function App() {
           <Route path="products"     element={<Products />} />
           <Route path="products/:slug" element={<ProductDetail />} />
           <Route path="services"     element={<Services />} />
+          <Route path="media"        element={<Media />} />
           <Route path="careers"      element={<Careers />} />
           <Route path="careers/:slug" element={<JobDetail />} />
           <Route path="news"         element={<News />} />
@@ -121,12 +125,14 @@ export default function App() {
           <Route path="products"  element={<AdminProducts />} />
           <Route path="orders"    element={<AdminOrders />} />
           <Route path="services"  element={<AdminServices />} />
+          <Route path="media"     element={<AdminMedia />} />
           <Route path="news"      element={<AdminNews />} />
           <Route path="jobs"      element={<AdminJobs />} />
           <Route path="messages"  element={<AdminMessages />} />
           <Route path="users"     element={<AdminUsers />} />
           <Route path="audit"     element={<AdminAudit />} />
           <Route path="settings"  element={<AdminSettings />} />
+          <Route path="experience" element={<AdminExperience />} />
         </Route>
 
         {/* ── Catch-all ───────────────────────────────────── */}

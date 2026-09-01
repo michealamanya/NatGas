@@ -18,7 +18,26 @@ const PUBLIC_SETTING_KEYS = [
   'seo_default_description',
   'homepage_hero_title',
   'homepage_hero_subtitle',
+  'home_hero_media_url',
+  'home_hero_media_type',
+  'home_hero_overlay',
+  'home_announcement_enabled',
+  'home_announcement_text',
+  'home_announcement_link',
+  'home_announcement_label',
+  'site_font',
 ];
+
+const RECOVERY_DEFAULTS: Record<string, string> = {
+  home_hero_media_url: '',
+  home_hero_media_type: 'image',
+  home_hero_overlay: '70',
+  home_announcement_enabled: 'false',
+  home_announcement_label: 'New',
+  home_announcement_text: '',
+  home_announcement_link: '',
+  site_font: 'Inter',
+};
 
 function parseSettingValue(value: string | null, type: string): unknown {
   if (value === null) return null;
@@ -127,4 +146,16 @@ export async function updateSetting(req: AuthenticatedRequest, res: Response): P
   });
 
   res.status(200).json(successResponse(setting, 'Setting updated'));
+}
+
+// POST /api/admin/settings/restore-defaults
+// A safe recovery point for site presentation only; operational CMS records are retained.
+export async function restorePresentationDefaults(req: AuthenticatedRequest, res: Response): Promise<void> {
+  await Promise.all(Object.entries(RECOVERY_DEFAULTS).map(([key, value]) => prisma.websiteSetting.upsert({
+    where: { key },
+    update: { value, type: 'string', category: 'experience' },
+    create: { key, value, type: 'string', category: 'experience', label: key.replace(/_/g, ' ') },
+  })));
+  await createAuditLog({ userId: req.user!.id, action: 'RESTORE_PRESENTATION_DEFAULTS', resource: 'settings', metadata: { keys: Object.keys(RECOVERY_DEFAULTS) }, ipAddress: (req.headers['x-forwarded-for'] as string) || req.ip, userAgent: req.headers['user-agent'] });
+  res.status(200).json(successResponse(null, 'Homepage and visual defaults restored. Content, accounts and orders were not changed.'));
 }

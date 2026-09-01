@@ -16,12 +16,12 @@ export function About() {
           <h1>Uganda's trusted LPG service company.</h1>
           <p>
             Strategic partnerships, expert engineers and an unwavering commitment
-            to safety — delivering reliable LPG solutions across Uganda.
+            to safety, delivering reliable LPG solutions across Uganda.
           </p>
         </div>
       </div>
 
-      <section className="section" style={{ background: '#fff' }}>
+      <section className="section about-who-section">
         <div className="wrap">
           <div className="about-grid">
             <div>
@@ -148,7 +148,7 @@ export function Services() {
         <div className="page-hero-wrap">
           <div className="chip">OUR SERVICES</div>
           <h1>LPG Technical Services</h1>
-          <p>From distribution and design to installation, maintenance and NDT — certified end-to-end LPG solutions.</p>
+          <p>From distribution and design to installation, maintenance and NDT, certified end-to-end LPG solutions.</p>
         </div>
       </div>
 
@@ -223,7 +223,7 @@ export function Contact() {
               <h2>How can we help you?</h2>
               <p>
                 Whether you need LPG distribution, an installation quote, maintenance
-                scheduling or expert consultancy — we're here for you.
+                scheduling or expert consultancy, we're here for you.
               </p>
 
               {[

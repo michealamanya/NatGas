@@ -1,9 +1,9 @@
 import {
   ArrowRight, Award, CheckCircle2, ChevronRight,
-  CreditCard, Globe, HardHat, MapPin, MessageCircle, Package, Phone, ScanLine,
+  CreditCard, Globe, HardHat, MapPin, MessageCircle, Package, Phone,
   Search, ShieldCheck, Truck, Wrench,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, Job, Location, NewsArticle, Product, ProductCategory } from '../api/client';
 import { addToCart } from '../lib/cart';
@@ -18,12 +18,16 @@ export default function Home() {
   const [locations,  setLocations]   = useState<Location[]>([]);
   const [district,   setDistrict]    = useState('');
   const [activeTab,  setActiveTab]   = useState('');
+  const [experience, setExperience] = useState<Record<string, string>>({});
 
   useEffect(() => {
     api<ProductCategory[]>('/products/categories').then(r => setCategories(r.data ?? [])).catch(() => undefined);
     api<NewsArticle[]>('/news?limit=3').then(r => setNews(r.data ?? [])).catch(() => undefined);
     api<Job[]>('/jobs?limit=3').then(r => setJobs(r.data ?? [])).catch(() => undefined);
     api<Location[]>('/locations').then(r => setLocations(r.data ?? [])).catch(() => undefined);
+    api<Record<string, unknown>>('/settings/public').then(r => {
+      setExperience(Object.fromEntries(Object.entries(r.data ?? {}).map(([key, value]) => [key, String(value ?? '')])));
+    }).catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -34,11 +38,17 @@ export default function Home() {
   }, [activeTab]);
 
   const FALLBACK = ['3kg','6kg','12.5kg','38kg','Flanges'];
+  const heroMedia = experience.home_hero_media_url;
+  const heroIsVideo = experience.home_hero_media_type === 'video';
+  const heroStyle = !heroIsVideo && heroMedia ? { '--hero-media': `url("${heroMedia}")`, '--hero-overlay': `${Number(experience.home_hero_overlay || 70) / 100}` } as CSSProperties : undefined;
+  useEffect(() => { if (experience.site_font) document.documentElement.style.setProperty('--site-font', `'${experience.site_font}', system-ui, sans-serif`); }, [experience.site_font]);
 
   return (
     <>
       {/* ── Hero banner ── */}
-      <div className="hero-banner">
+      {experience.home_announcement_enabled === 'true' && experience.home_announcement_text && <Link className="home-announcement" to={experience.home_announcement_link || '/products'}><b>{experience.home_announcement_label || 'New'}</b><span>{experience.home_announcement_text}</span><ArrowRight size={14}/></Link>}
+      <div className={`hero-banner${heroIsVideo && heroMedia ? ' hero-video' : ''}`} style={heroStyle}>
+        {heroIsVideo && heroMedia && <video className="hero-video-media" src={heroMedia} autoPlay muted loop playsInline />}
         <div className="hero-inner">
           <div className="hero-copy">
             <div className="hero-badge">
@@ -46,11 +56,10 @@ export default function Home() {
               Authorized LPG Distributor &amp; Technical Services · Uganda
             </div>
             <h1 className="hero-h1">
-              Safe LPG systems for<br /><em>homes, business and industry.</em>
+              {experience.homepage_hero_title || 'Safe LPG systems for'}<br /><em>homes, business and industry.</em>
             </h1>
             <p className="hero-sub">
-              Certified LPG distribution, system design, installation, maintenance
-              and NDT testing — for homes, businesses and industries across Uganda.
+              {experience.homepage_hero_subtitle || 'Certified LPG distribution, system design, installation, maintenance and NDT testing for homes, businesses and industries across Uganda.'}
             </p>
             <div className="hero-btns">
               <Link className="btn btn-primary" to="/products">
@@ -166,9 +175,7 @@ export default function Home() {
       {/* ── Services ── */}
       <section className="section home-value-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">WHY CHOOSE NATGAS</span><h2>Energy delivered with safety and care.</h2></div></div><div className="home-value-grid">{[{icon:ShieldCheck,title:'Safety first',text:'Certified cylinders, safe handling guidance and trained support.'},{icon:Truck,title:'Reliable supply',text:'Dependable LPG availability and convenient delivery coordination.'},{icon:CheckCircle2,title:'Genuine cylinders',text:'Quality-checked NATGAS products and trusted accessories.'},{icon:MessageCircle,title:'Customer support',text:'Helpful assistance for homes, dealers and commercial customers.'}].map(({icon:Icon,title,text}) => <article key={title}><Icon size={24}/><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>
 
-      <section className="section home-order-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">HOW TO ORDER</span><h2>Gas delivered in four clear steps.</h2></div><Link className="btn btn-dark" to="/contact">Order Gas <ArrowRight size={14}/></Link></div><div className="order-steps">{[{icon:Package,title:'Select product',text:'Choose your cylinder or refill size.'},{icon:MapPin,title:'Share location',text:'Tell us your district and delivery point.'},{icon:CreditCard,title:'Confirm payment',text:'Confirm the agreed payment method.'},{icon:Truck,title:'Receive delivery',text:'Get your LPG supply safely and conveniently.'}].map(({icon:Icon,title,text},index) => <article key={title}><span>{index + 1}</span><Icon size={23}/><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>
-
-      <section className="section home-utility-section"><div className="wrap home-utility-grid"><article className="verify-card"><ScanLine size={30}/><div><span className="chip-sm">CYLINDER VERIFICATION</span><h2>Check your NATGAS cylinder.</h2><p>Have a serial number or QR code? Our team can confirm authorised supply and safety information.</p><Link className="btn btn-primary" to="/contact">Verify a cylinder <ArrowRight size={14}/></Link></div></article><article className="safety-card"><ShieldCheck size={30}/><div><span className="chip-sm">LPG SAFETY</span><h2>Know what to do.</h2><ul><li>Keep cylinders upright in a ventilated space.</li><li>Check hose connections with soapy water—never a flame.</li><li>If you smell gas, close the valve, ventilate and call NATGAS.</li></ul><Link className="link-all" to="/faq">Read safety guidance <ArrowRight size={14}/></Link></div></article></div></section>
+      <section className="section home-order-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">HOW TO ORDER</span><h2>Gas delivered in four clear steps.</h2></div><Link className="btn btn-dark" to="/products">Order Gas <ArrowRight size={14}/></Link></div><div className="order-steps">{[{icon:Package,title:'Select product',text:'Choose your cylinder or refill size.'},{icon:MapPin,title:'Share location',text:'Tell us your district and delivery point.'},{icon:CreditCard,title:'Confirm payment',text:'Confirm the agreed payment method.'},{icon:Truck,title:'Receive delivery',text:'Get your LPG supply safely and conveniently.'}].map(({icon:Icon,title,text},index) => <article key={title}><span>{index + 1}</span><Icon size={23}/><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>
 
       <section className="section dealer-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">DEALER & OUTLET LOCATOR</span><h2>Find LPG near you.</h2></div></div><div className="locator-search"><Search size={18}/><input value={district} onChange={event => setDistrict(event.target.value)} placeholder="Search by district or outlet name" aria-label="Search dealer outlets"/></div><div className="dealer-grid">{locations.filter(location => `${location.name} ${location.district} ${location.region}`.toLowerCase().includes(district.toLowerCase())).slice(0,3).map(location => <article key={location.id}><MapPin size={20}/><h3>{location.name}</h3><p>{location.address}, {location.district}</p><a href={`tel:${location.phone ?? ''}`}>{location.phone ?? 'Contact outlet'}</a></article>)}{!locations.length && <p>Outlet information will appear here as it is added in the CMS.</p>}</div></div></section>
 
@@ -230,7 +237,7 @@ export default function Home() {
                 <span className="chip-sm">OPPORTUNITIES</span>
                 <h2>Join the NATGAS team.</h2>
                 <p style={{ color:'var(--muted)', fontSize:14, marginTop:8 }}>
-                  We're growing — help us deliver safe, reliable energy across Uganda.
+                  We're growing, help us deliver safe, reliable energy across Uganda.
                 </p>
               </div>
               <Link className="link-all" to="/careers">All vacancies <ChevronRight size={14} /></Link>

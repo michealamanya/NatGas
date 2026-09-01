@@ -1,6 +1,6 @@
 import {
   BarChart3, Briefcase, FileText, Globe, LayoutDashboard,
-  LogOut, MessageSquare, Package, Settings, Users,
+  Image, LogOut, MessageSquare, Package, Settings, Users,
 } from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { api, User } from '../api/client';
@@ -9,6 +9,8 @@ const NAV = [
   { icon: LayoutDashboard, label: 'Overview',   to: '/admin/dashboard' },
   { icon: Package,         label: 'Products',   to: '/admin/products'  },
   { icon: Package,         label: 'Services',   to: '/admin/services'  },
+  { icon: Image,           label: 'Media & Team', to: '/admin/media'   },
+  { icon: Globe,           label: 'Site Experience', to: '/admin/experience' },
   { icon: Package,         label: 'Orders',     to: '/admin/orders'    },
   { icon: FileText,        label: 'News',        to: '/admin/news'      },
   { icon: Briefcase,       label: 'Jobs',        to: '/admin/jobs'      },

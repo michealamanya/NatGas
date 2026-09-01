@@ -1,6 +1,6 @@
 import {
   Facebook, Linkedin, Mail, MapPin, Phone, Twitter, Youtube,
-  ChevronDown, Shield, Package, Briefcase, BookOpen,
+  ChevronDown, Shield, Package, Briefcase, BookOpen, Image,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
@@ -72,6 +72,8 @@ export default function PublicLayout() {
 
           <NavLink to="/services"><Shield size={13} /> Services</NavLink>
 
+          <NavLink to="/media"><Image size={13} /> Media</NavLink>
+
           {/* Opportunities dropdown */}
           <div className="nav-dropdown">
             <button onClick={() => {}}>
@@ -97,7 +99,7 @@ export default function PublicLayout() {
             </div>
           </div>
 
-          <NavLink to="/contact" className="nav-enquire">Order Gas</NavLink>
+          <NavLink to="/products" className="nav-enquire">Order Gas</NavLink>
         </div>
       </nav>
 
