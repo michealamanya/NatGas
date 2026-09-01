@@ -162,7 +162,7 @@ export function Services() {
               </article>
             ))}
           </div>}
-          <div className="svc-grid">
+          <div className="svc-grid legacy-services" aria-hidden="true">
             {SERVICES.map(({ icon: Icon, title, desc }) => (
               <div className="svc-card" key={title}>
                 <div className="svc-icon"><Icon size={22} /></div>

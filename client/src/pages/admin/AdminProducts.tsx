@@ -83,6 +83,9 @@ export default function AdminProducts() {
       isAvailable:      fd.get('isAvailable') === 'true',
       isFeatured:       fd.get('isFeatured') === 'on',
       displayOrder:     Number(fd.get('displayOrder') ?? 0),
+      price:            fd.get('price') ? Number(fd.get('price')) : null,
+      compareAtPrice:   fd.get('compareAtPrice') ? Number(fd.get('compareAtPrice')) : null,
+      currency:         String(fd.get('currency') ?? 'UGX'),
       features:         cleanFeatures,
     };
     // Upload image first if selected
@@ -193,6 +196,11 @@ export default function AdminProducts() {
                   <label>Display order</label>
                   <input type="number" name="displayOrder" defaultValue={editing?.displayOrder ?? 0} />
                 </div>
+              </div>
+              <div className="form-row-2">
+                <div className="form-group"><label>Price</label><input type="number" min="0" name="price" defaultValue={editing?.price ?? ''} placeholder="e.g. 95000" /></div>
+                <div className="form-group"><label>Previous / compare-at price</label><input type="number" min="0" name="compareAtPrice" defaultValue={editing?.compareAtPrice ?? ''} placeholder="Optional offer price" /></div>
+                <input type="hidden" name="currency" value="UGX" />
               </div>
               <div className="form-group">
                 <label>Short description</label>

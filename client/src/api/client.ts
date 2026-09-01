@@ -31,6 +31,9 @@ export interface Product {
   description?: string;
   imageUrl?: string;
   images?: string[];
+  price?: string | number;
+  compareAtPrice?: string | number;
+  currency?: string;
   features?: string[];
   safetyInfo?: string;
   specifications?: Record<string, string>;
@@ -120,6 +123,7 @@ export interface Location {
   openingHours?: string;
   isHeadquarters: boolean;
   isActive: boolean;
+  displayOrder?: number;
 }
 
 export interface FAQ {

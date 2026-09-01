@@ -1,0 +1,2 @@
+ALTER TABLE "orders" ADD COLUMN "delivery_method" TEXT NOT NULL DEFAULT 'DELIVERY';
+ALTER TABLE "orders" ADD COLUMN "preferred_date" TIMESTAMP(3);

@@ -9,6 +9,7 @@ import { api, Job, Location, NewsArticle, Product, ProductCategory } from '../ap
 import { addToCart } from '../lib/cart';
 
 const COLORS = ['cyl-bg-0','cyl-bg-1','cyl-bg-2','cyl-bg-3','cyl-bg-4'];
+const priceLabel = (price?: string | number, currency = 'UGX') => price === undefined || price === null ? 'Price on confirmation' : new Intl.NumberFormat('en-UG', { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(price));
 
 export default function Home() {
   const [categories, setCategories] = useState<ProductCategory[]>([]);
@@ -288,6 +289,7 @@ export function ProductCard({ p, idx }: { p: Product; idx: number }) {
           {p.cylinderSize && <span className="pcard-size">{p.cylinderSize}</span>}
         </div>
         <Link to={`/products/${p.slug}`} className="pcard-name">{p.name}</Link>
+        <strong className="pcard-price">{priceLabel(p.price, p.currency)}</strong>
         <div className="pcard-footer">
           <span className={`pcard-avail ${p.isAvailable ? 'avail-yes' : 'avail-no'}`}>
             {p.isAvailable ? 'In stock' : 'Unavailable'}

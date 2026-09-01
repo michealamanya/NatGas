@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { OrderStatus } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../database/client.js';
 import { AuthenticatedRequest, successResponse } from '../types/index.js';
 import { AppError, NotFoundError } from '../utils/errors.js';
@@ -8,7 +9,7 @@ import { createAuditLog } from '../services/audit.service.js';
 function orderNumber() { return `NG-${new Date().getFullYear()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`; }
 
 export async function createOrder(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const { items, deliveryAddress, district, phone, notes } = req.body as { items: { productId: string; quantity: number }[]; deliveryAddress: string; district: string; phone: string; notes?: string };
+  const { items, deliveryAddress, district, phone, deliveryMethod, preferredDate, notes } = req.body as { items: { productId: string; quantity: number }[]; deliveryAddress: string; district: string; phone: string; deliveryMethod?: string; preferredDate?: string; notes?: string };
   if (!Array.isArray(items) || !items.length) throw new AppError('Add at least one product to your order.', 400);
   if (!deliveryAddress || !district || !phone) throw new AppError('Delivery address, district and phone are required.', 400);
   const productIds = [...new Set(items.map(item => item.productId))];
@@ -17,11 +18,12 @@ export async function createOrder(req: AuthenticatedRequest, res: Response): Pro
   const byId = new Map(products.map(product => [product.id, product]));
   const order = await prisma.order.create({
     data: {
-      orderNumber: orderNumber(), customerId: req.user!.id, deliveryAddress, district, phone, notes,
+      orderNumber: orderNumber(), customerId: req.user!.id, deliveryAddress, district, phone, deliveryMethod: deliveryMethod ?? 'DELIVERY', preferredDate: preferredDate ? new Date(preferredDate) : null, notes,
       items: { create: items.map(item => {
         if (!Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 1000) throw new AppError('Each quantity must be between 1 and 1000.', 400);
         const product = byId.get(item.productId)!;
-        return { productId: product.id, quantity: item.quantity, productName: product.name };
+        const unitPrice = product.price;
+        return { productId: product.id, quantity: item.quantity, productName: product.name, unitPrice, lineTotal: unitPrice ? new Prisma.Decimal(unitPrice).mul(item.quantity) : null };
       }) },
     }, include: { items: true },
   });

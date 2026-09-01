@@ -1,14 +1,24 @@
 import {
-  Facebook, Linkedin, Mail, MapPin, Phone, Twitter, Youtube,
+  Facebook, Linkedin, Mail, MapPin, Phone, X, Youtube,
   ChevronDown, Shield, Package, Briefcase, BookOpen, Image,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import NatGasLogo from './Logo';
+import { api } from '../api/client';
 
 export default function PublicLayout() {
   const [open, setOpen] = useState(false);
+  const [social, setSocial] = useState<Record<string, string>>({});
   const close = () => setOpen(false);
+  useEffect(() => {
+    api<Record<string, unknown>>('/settings/public')
+      .then(result => setSocial(Object.fromEntries(Object.entries(result.data ?? {}).map(([key, value]) => [key, String(value ?? '')]))))
+      .catch(() => undefined);
+  }, []);
+  const socialLinks = [
+    { key: 'social_facebook', icon: Facebook, label: 'Facebook' }, { key: 'social_twitter', icon: X, label: 'X' }, { key: 'social_youtube', icon: Youtube, label: 'YouTube' }, { key: 'social_linkedin', icon: Linkedin, label: 'LinkedIn' },
+  ].filter(item => social[item.key] && social[item.key] !== '#');
 
   return (
     <>
@@ -23,12 +33,7 @@ export default function PublicLayout() {
           <span style={{ display:'flex', alignItems:'center', gap:5 }}>
             <MapPin size={12} /> Kawuku, Entebbe Road, Uganda
           </span>
-          <div className="topbar-socials">
-            <a href="#" aria-label="Facebook"><Facebook size={12} /></a>
-            <a href="#" aria-label="Twitter"><Twitter size={12} /></a>
-            <a href="#" aria-label="YouTube"><Youtube size={12} /></a>
-            <a href="#" aria-label="LinkedIn"><Linkedin size={12} /></a>
-          </div>
+          {socialLinks.length > 0 && <div className="topbar-socials">{socialLinks.map(({ key, icon: Icon, label }) => <a key={key} href={social[key]} target="_blank" rel="noreferrer" aria-label={label}><Icon size={12} /></a>)}</div>}
         </div>
       </div>
 
@@ -119,12 +124,7 @@ export default function PublicLayout() {
               Uganda's authorized LPG distributor and technical services provider.
               Certified installations, maintenance, NDT testing and consultancy.
             </p>
-            <div className="footer-socials">
-              <a href="#" aria-label="Facebook"><Facebook size={14} /></a>
-              <a href="#" aria-label="Twitter"><Twitter size={14} /></a>
-              <a href="#" aria-label="YouTube"><Youtube size={14} /></a>
-              <a href="#" aria-label="LinkedIn"><Linkedin size={14} /></a>
-            </div>
+            {socialLinks.length > 0 && <div className="footer-socials">{socialLinks.map(({ key, icon: Icon, label }) => <a key={key} href={social[key]} target="_blank" rel="noreferrer" aria-label={label}><Icon size={14} /></a>)}</div>}
           </div>
 
           <div className="footer-col">

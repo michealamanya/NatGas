@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { ImagePlus, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { api, Service } from '../../api/client';
+import ConfirmDialog from '../../components/ConfirmDialog';
 
 export default function AdminServices() {
   const [services, setServices] = useState<Service[]>([]);
@@ -12,6 +13,7 @@ export default function AdminServices() {
   const [preview, setPreview] = useState('');
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
+  const [pendingDelete, setPendingDelete] = useState<Service | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
@@ -77,7 +79,6 @@ export default function AdminServices() {
   };
 
   const remove = async (service: Service) => {
-    if (!window.confirm(`Delete “${service.name}”? This cannot be undone.`)) return;
     setError('');
     try {
       const response = await api(`/admin/services/${service.id}`, { method: 'DELETE' });
@@ -112,8 +113,9 @@ export default function AdminServices() {
     <div className="product-grid product-grid-3">
       {services.map(service => <article className="ncard" key={service.id}>
         {service.imageUrl && <div className="ncard-img"><img src={service.imageUrl} alt={service.name} /></div>}
-        <div className="ncard-body"><h3>{service.name}</h3><p>{service.shortDesc ?? service.description}</p><div className="admin-form-actions"><button className="btn btn-outline" onClick={() => startEdit(service)}><Pencil size={14} /> Edit</button><button className="btn btn-outline" onClick={() => remove(service)}><Trash2 size={14} /> Delete</button></div></div>
+        <div className="ncard-body"><h3>{service.name}</h3><p>{service.shortDesc ?? service.description}</p><div className="admin-form-actions"><button type="button" className="btn btn-outline" onClick={() => startEdit(service)}><Pencil size={14} /> Edit</button><button type="button" className="btn btn-outline" onClick={() => setPendingDelete(service)}><Trash2 size={14} /> Delete</button></div></div>
       </article>)}
     </div>
+    <ConfirmDialog open={Boolean(pendingDelete)} title="Delete service?" message={`This will permanently remove ${pendingDelete?.name ?? 'this service'} from the website and CMS.`} confirmLabel="Delete service" onCancel={() => setPendingDelete(null)} onConfirm={() => { if (pendingDelete) { void remove(pendingDelete); setPendingDelete(null); } }} />
   </div>;
 }

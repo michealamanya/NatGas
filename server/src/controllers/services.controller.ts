@@ -122,7 +122,7 @@ export async function deleteService(req: AuthenticatedRequest, res: Response): P
   const existing = await prisma.service.findUnique({ where: { id } });
   if (!existing) throw new NotFoundError('Service');
 
-  await prisma.service.update({ where: { id }, data: { status: 'ARCHIVED' } });
+  await prisma.service.delete({ where: { id } });
 
   await createAuditLog({
     userId: req.user!.id,
@@ -133,5 +133,5 @@ export async function deleteService(req: AuthenticatedRequest, res: Response): P
     userAgent: req.headers['user-agent'],
   });
 
-  res.status(200).json(successResponse(null, 'Service archived'));
+  res.status(200).json(successResponse(null, 'Service deleted'));
 }

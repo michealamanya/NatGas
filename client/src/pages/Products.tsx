@@ -3,9 +3,11 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api, Product, ProductCategory } from '../api/client';
 import { ProductCard } from './Home';
+import { addToCart } from '../lib/cart';
 
 const COLORS = ['cyl-bg-0','cyl-bg-1','cyl-bg-2','cyl-bg-3','cyl-bg-4'];
 const LIMIT  = 15;
+const priceLabel = (price?: string | number, currency = 'UGX') => price === undefined || price === null ? 'Price on confirmation' : new Intl.NumberFormat('en-UG', { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(price));
 
 /* ── Products listing ── */
 export default function Products() {
@@ -199,6 +201,7 @@ export function ProductDetail() {
             <div className="pd-info">
               <span className="pd-cat-tag">{product.category?.name ?? 'LPG PRODUCT'}</span>
               <h1 className="pd-title">{product.name}</h1>
+              <div className="pd-price">{priceLabel(product.price, product.currency)}</div>
 
               <div className="pd-avail">
                 <span style={{ width:8, height:8, borderRadius:'50%', background: product.isAvailable ? '#08705a' : '#9b5b00', display:'inline-block' }} />
@@ -241,9 +244,9 @@ export function ProductDetail() {
               )}
 
               <div className="pd-actions">
-                <Link className="btn btn-primary" to="/contact">
-                  Enquire about this product <ArrowRight size={14} />
-                </Link>
+                <button className="btn btn-primary" disabled={!product.isAvailable} onClick={() => { addToCart(product); navigate('/order'); }}>
+                  {product.isAvailable ? <>Add to order <ArrowRight size={14} /></> : 'Currently unavailable'}
+                </button>
                 <Link className="btn btn-outline btn-sm" to="/products">← Back to products</Link>
               </div>
             </div>

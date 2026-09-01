@@ -21,6 +21,7 @@ const Terms       = lazy(() => import('./pages/StaticPages').then(m => ({ defaul
 const OrderCart   = lazy(() => import('./pages/OrderCart'));
 const CustomerAccount = lazy(() => import('./pages/CustomerAccount'));
 const Media       = lazy(() => import('./pages/Media'));
+const Locations   = lazy(() => import('./pages/Locations'));
 
 // ── Admin pages (lazy loaded) ─────────────────────────────────────────────────
 const Login          = lazy(() => import('./pages/admin/Login'));
@@ -29,6 +30,7 @@ const AdminProducts  = lazy(() => import('./pages/admin/AdminProducts'));
 const AdminOrders    = lazy(() => import('./pages/admin/AdminOrders'));
 const AdminServices  = lazy(() => import('./pages/admin/AdminServices'));
 const AdminMedia     = lazy(() => import('./pages/admin/AdminMedia'));
+const AdminLocations = lazy(() => import('./pages/admin/AdminLocations'));
 const AdminNews      = lazy(() => import('./pages/admin/AdminNews'));
 const AdminJobs      = lazy(() => import('./pages/admin/AdminJobs'));
 const AdminMessages  = lazy(() => import('./pages/admin/AdminMessages'));
@@ -89,6 +91,7 @@ export default function App() {
           <Route path="products/:slug" element={<ProductDetail />} />
           <Route path="services"     element={<Services />} />
           <Route path="media"        element={<Media />} />
+          <Route path="locations"    element={<Locations />} />
           <Route path="careers"      element={<Careers />} />
           <Route path="careers/:slug" element={<JobDetail />} />
           <Route path="news"         element={<News />} />
@@ -126,6 +129,7 @@ export default function App() {
           <Route path="orders"    element={<AdminOrders />} />
           <Route path="services"  element={<AdminServices />} />
           <Route path="media"     element={<AdminMedia />} />
+          <Route path="locations" element={<AdminLocations />} />
           <Route path="news"      element={<AdminNews />} />
           <Route path="jobs"      element={<AdminJobs />} />
           <Route path="messages"  element={<AdminMessages />} />

@@ -13,6 +13,7 @@ const PUBLIC_SETTING_KEYS = [
   'social_facebook',
   'social_twitter',
   'social_linkedin',
+  'social_youtube',
   'footer_text',
   'seo_default_title',
   'seo_default_description',
