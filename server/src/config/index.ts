@@ -3,22 +3,44 @@ import path from 'path';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
-function requireEnv(key: string): string {
-  const value = process.env[key];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${key}`);
-  }
-  return value;
-}
+const NODE_ENV = process.env.NODE_ENV ?? 'development';
+const IS_PRODUCTION = NODE_ENV === 'production';
 
 function optionalEnv(key: string, defaultValue: string = ''): string {
   return process.env[key] || defaultValue;
 }
 
+/**
+ * In production, critical variables must be explicitly set.
+ * Fail at startup with a clear message rather than silently using insecure defaults.
+ */
+function validateProductionEnv(): void {
+  if (!IS_PRODUCTION) return;
+
+  const required = ['DATABASE_URL', 'SESSION_SECRET', 'CORS_ORIGINS'];
+  const missing = required.filter((key) => !process.env[key]);
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Production startup aborted. The following required environment variables are not set:\n  ${missing.join('\n  ')}\n\nCopy server/.env.example to server/.env and set all required values.`,
+    );
+  }
+
+  // Reject unchanged development placeholder secrets
+  const sessionSecret = process.env.SESSION_SECRET ?? '';
+  if (sessionSecret.includes('dev') || sessionSecret.includes('change') || sessionSecret.length < 32) {
+    throw new Error(
+      'SESSION_SECRET looks like a development placeholder or is too short (minimum 32 characters). Set a strong random value in production.',
+    );
+  }
+}
+
+validateProductionEnv();
+
 export const config = {
-  env: optionalEnv('NODE_ENV', 'development'),
-  isProduction: optionalEnv('NODE_ENV', 'development') === 'production',
-  isDevelopment: optionalEnv('NODE_ENV', 'development') === 'development',
+  env: NODE_ENV,
+  isProduction: IS_PRODUCTION,
+  isDevelopment: NODE_ENV === 'development',
 
   server: {
     port: parseInt(optionalEnv('PORT', '3001'), 10),
@@ -35,8 +57,9 @@ export const config = {
   },
 
   auth: {
-    sessionSecret: optionalEnv('SESSION_SECRET', 'natgas-dev-session-secret-change-in-production'),
-    jwtSecret: optionalEnv('JWT_SECRET', 'natgas-dev-jwt-secret-change-in-production'),
+    // SESSION_SECRET has no safe fallback in production (validated above).
+    // The dev placeholder is only used when NODE_ENV != production.
+    sessionSecret: optionalEnv('SESSION_SECRET', 'natgas-dev-session-secret-not-for-production'),
     sessionExpiryDays: parseInt(optionalEnv('SESSION_EXPIRY_DAYS', '7'), 10),
     maxLoginAttempts: parseInt(optionalEnv('MAX_LOGIN_ATTEMPTS', '5'), 10),
     lockoutMinutes: parseInt(optionalEnv('LOCKOUT_MINUTES', '15'), 10),
@@ -44,7 +67,9 @@ export const config = {
   },
 
   cors: {
-    origins: optionalEnv('CORS_ORIGINS', 'http://localhost:5173').split(','),
+    origins: optionalEnv('CORS_ORIGINS', 'http://localhost:5173')
+      .split(',')
+      .map((o) => o.trim()),
   },
 
   storage: {
@@ -66,8 +91,8 @@ export const config = {
     from: optionalEnv('EMAIL_FROM', 'noreply@natgasuganda.com'),
     fromName: optionalEnv('EMAIL_FROM_NAME', 'NATGAS Uganda'),
     smtp: {
-      host: optionalEnv('SMTP_HOST', 'smtp.mailtrap.io'),
-      port: parseInt(optionalEnv('SMTP_PORT', '2525'), 10),
+      host: optionalEnv('SMTP_HOST', 'localhost'),
+      port: parseInt(optionalEnv('SMTP_PORT', '587'), 10),
       user: optionalEnv('SMTP_USER', ''),
       pass: optionalEnv('SMTP_PASS', ''),
       secure: optionalEnv('SMTP_SECURE', 'false') === 'true',
@@ -90,6 +115,12 @@ export const config = {
   upload: {
     maxFileSize: parseInt(optionalEnv('MAX_FILE_SIZE_MB', '10'), 10) * 1024 * 1024,
     allowedImageTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'],
-    allowedDocTypes: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'video/mp4', 'video/webm'],
+    allowedDocTypes: [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'video/mp4',
+      'video/webm',
+    ],
   },
 } as const;

@@ -2,23 +2,94 @@ import {
   Facebook, Linkedin, Mail, MapPin, Phone, X, Youtube,
   ChevronDown, Shield, Package, Briefcase, BookOpen, Image,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import NatGasLogo from './Logo';
 import { api } from '../api/client';
 
-export default function PublicLayout() {
+// ── Dropdown menu component ────────────────────────────────────────────────
+// Manages its own open/close state and closes on outside click, Escape key,
+// and route change, giving keyboard and touch users full access.
+function NavDropdown({
+  label,
+  icon: Icon,
+  children,
+}: {
+  label: string;
+  icon: React.ElementType;
+  children: React.ReactNode;
+}) {
   const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Close on Escape key
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
+
+  return (
+    <div className="nav-dropdown" ref={ref}>
+      <button
+        aria-haspopup="true"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        onMouseEnter={() => setOpen(true)}
+      >
+        <Icon size={13} /> {label} <ChevronDown size={12} />
+      </button>
+      {/* CSS :hover also opens on desktop; JS state handles keyboard/touch */}
+      <div
+        className="dropdown-menu"
+        style={open ? { opacity: 1, pointerEvents: 'auto', transform: 'translateY(0)' } : undefined}
+        onClick={() => setOpen(false)}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export default function PublicLayout() {
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [social, setSocial] = useState<Record<string, string>>({});
-  const close = () => setOpen(false);
+  const { pathname } = useLocation();
+
+  // Close mobile menu on route change
+  useEffect(() => { setMobileOpen(false); }, [pathname]);
+
   useEffect(() => {
     api<Record<string, unknown>>('/settings/public')
-      .then(result => setSocial(Object.fromEntries(Object.entries(result.data ?? {}).map(([key, value]) => [key, String(value ?? '')]))))
+      .then((result) =>
+        setSocial(
+          Object.fromEntries(
+            Object.entries(result.data ?? {}).map(([key, value]) => [key, String(value ?? '')]),
+          ),
+        ),
+      )
       .catch(() => undefined);
   }, []);
+
   const socialLinks = [
-    { key: 'social_facebook', icon: Facebook, label: 'Facebook' }, { key: 'social_twitter', icon: X, label: 'X' }, { key: 'social_youtube', icon: Youtube, label: 'YouTube' }, { key: 'social_linkedin', icon: Linkedin, label: 'LinkedIn' },
-  ].filter(item => social[item.key] && social[item.key] !== '#');
+    { key: 'social_facebook', icon: Facebook, label: 'Facebook' },
+    { key: 'social_twitter',  icon: X,        label: 'X'        },
+    { key: 'social_youtube',  icon: Youtube,  label: 'YouTube'  },
+    { key: 'social_linkedin', icon: Linkedin, label: 'LinkedIn' },
+  ].filter((item) => social[item.key] && social[item.key] !== '#');
 
   return (
     <>
@@ -30,79 +101,69 @@ export default function PublicLayout() {
           <a href="mailto:info@natgasuganda.com"><Mail size={12} /> info@natgasuganda.com</a>
         </div>
         <div className="topbar-r">
-          <span style={{ display:'flex', alignItems:'center', gap:5 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <MapPin size={12} /> Kawuku, Entebbe Road, Uganda
           </span>
-          {socialLinks.length > 0 && <div className="topbar-socials">{socialLinks.map(({ key, icon: Icon, label }) => <a key={key} href={social[key]} target="_blank" rel="noreferrer" aria-label={label}><Icon size={12} /></a>)}</div>}
+          {socialLinks.length > 0 && (
+            <div className="topbar-socials">
+              {socialLinks.map(({ key, icon: SocialIcon, label }) => (
+                <a key={key} href={social[key]} target="_blank" rel="noreferrer" aria-label={label}>
+                  <SocialIcon size={12} />
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       {/* ── Main nav ── */}
       <nav className="main-nav" role="navigation" aria-label="Main navigation">
-        <Link to="/" onClick={close} style={{ textDecoration: 'none' }}>
+        <Link to="/" style={{ textDecoration: 'none' }}>
           <NatGasLogo height={44} theme="dark" />
         </Link>
 
         <button
           className="hamburger"
           aria-label="Toggle navigation"
-          aria-expanded={open}
-          onClick={() => setOpen(o => !o)}
+          aria-expanded={mobileOpen}
+          onClick={() => setMobileOpen((o) => !o)}
         >
-          <span className={`hbar hbar-1${open ? ' open' : ''}`} />
-          <span className={`hbar hbar-2${open ? ' open' : ''}`} />
-          <span className={`hbar hbar-3${open ? ' open' : ''}`} />
+          <span className={`hbar hbar-1${mobileOpen ? ' open' : ''}`} />
+          <span className={`hbar hbar-2${mobileOpen ? ' open' : ''}`} />
+          <span className={`hbar hbar-3${mobileOpen ? ' open' : ''}`} />
         </button>
 
-        <div className={`nav-links${open ? ' open' : ''}`} onClick={close}>
+        <div className={`nav-links${mobileOpen ? ' open' : ''}`}>
           <NavLink to="/">Home</NavLink>
           <NavLink to="/about">About Us</NavLink>
 
           {/* Products dropdown */}
-          <div className="nav-dropdown">
-            <NavLink to="/products" style={{ textDecoration:'none' }}>
-              <Package size={13} /> Products <ChevronDown size={12} />
-            </NavLink>
-            <div className="dropdown-menu">
-              <Link to="/products">All Products</Link>
-              <div className="dropdown-divider" />
-              <Link to="/products?category=lpg-cylinders">LPG Cylinders</Link>
-              <Link to="/products?category=fittings">Fittings &amp; Flanges</Link>
-              <Link to="/products?category=accessories">Accessories</Link>
-              <Link to="/products?category=industrial">Industrial Equipment</Link>
-              <div className="dropdown-divider" />
-              <Link to="/products?featured=true">Featured products</Link>
-            </div>
-          </div>
+          <NavDropdown label="Products" icon={Package}>
+            <Link to="/products">All Products</Link>
+            <div className="dropdown-divider" />
+            <Link to="/products?category=lpg-cylinders">LPG Cylinders</Link>
+            <Link to="/products?category=commercial">Commercial</Link>
+            <Link to="/products?category=industrial">Industrial</Link>
+            <div className="dropdown-divider" />
+            <Link to="/products?featured=true">Featured products</Link>
+          </NavDropdown>
 
           <NavLink to="/services"><Shield size={13} /> Services</NavLink>
 
           <NavLink to="/media"><Image size={13} /> Media</NavLink>
 
           {/* Opportunities dropdown */}
-          <div className="nav-dropdown">
-            <button onClick={() => {}}>
-              <Briefcase size={13} /> Opportunities <ChevronDown size={12} />
-            </button>
-            <div className="dropdown-menu">
-              <Link to="/careers">Open Positions</Link>
-              <Link to="/careers">Internships</Link>
-              <Link to="/contact">Become a Distributor</Link>
-              <Link to="/contact">Partner with Us</Link>
-            </div>
-          </div>
+          <NavDropdown label="Opportunities" icon={Briefcase}>
+            <Link to="/careers">Open Positions</Link>
+            <Link to="/contact">Become a Distributor</Link>
+            <Link to="/contact">Partner with Us</Link>
+          </NavDropdown>
 
-          {/* News & Blog */}
-          <div className="nav-dropdown">
-            <button onClick={() => {}}>
-              <BookOpen size={13} /> News &amp; Blog <ChevronDown size={12} />
-            </button>
-            <div className="dropdown-menu">
-              <Link to="/news">All Articles</Link>
-              <Link to="/news">Industry Updates</Link>
-              <Link to="/news">Company News</Link>
-            </div>
-          </div>
+          {/* News & Blog dropdown */}
+          <NavDropdown label="News & Blog" icon={BookOpen}>
+            <Link to="/news">All Articles</Link>
+            <Link to="/news">Company News</Link>
+          </NavDropdown>
 
           <NavLink to="/products" className="nav-enquire">Order Gas</NavLink>
         </div>
@@ -124,7 +185,15 @@ export default function PublicLayout() {
               Uganda's authorized LPG distributor and technical services provider.
               Certified installations, maintenance, NDT testing and consultancy.
             </p>
-            {socialLinks.length > 0 && <div className="footer-socials">{socialLinks.map(({ key, icon: Icon, label }) => <a key={key} href={social[key]} target="_blank" rel="noreferrer" aria-label={label}><Icon size={14} /></a>)}</div>}
+            {socialLinks.length > 0 && (
+              <div className="footer-socials">
+                {socialLinks.map(({ key, icon: SocialIcon, label }) => (
+                  <a key={key} href={social[key]} target="_blank" rel="noreferrer" aria-label={label}>
+                    <SocialIcon size={14} />
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="footer-col">
@@ -153,7 +222,7 @@ export default function PublicLayout() {
             <p><Phone size={12} /> +256 781 011 751</p>
             <p><Mail size={12} /> info@natgasuganda.com</p>
             <p><MapPin size={12} /> Kawuku, Entebbe Road</p>
-            <p style={{ color:'#3a7670', fontSize:11 }}>Mon – Fri &nbsp; 8:00 AM – 5:00 PM</p>
+            <p style={{ color: '#3a7670', fontSize: 11 }}>Mon – Fri &nbsp; 8:00 AM – 5:00 PM</p>
           </div>
         </div>
 

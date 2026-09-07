@@ -1,4 +1,4 @@
-import {
+﻿import {
   ArrowRight, CheckCircle2, Clock, Flame, HardHat,
   Mail, MapPin, Phone, Search, ShieldCheck, Wrench,
 } from 'lucide-react';
@@ -122,25 +122,35 @@ export function About() {
 }
 
 /* ─── Services ───────────────────────────────────────────────────────────── */
+
+// Static fallback used only when the API returns no services.
+const STATIC_SERVICES = [
+  { icon: Flame,       title: 'Authorized LPG Products Distribution',   desc: 'The number one authorized distributor of all LPG products — reliable, certified, nationwide.' },
+  { icon: ShieldCheck, title: 'Accessories & Equipment Supply',          desc: 'Flanges, fittings, brass adaptors, regulators and all LPG accessories from certified sources.' },
+  { icon: HardHat,     title: 'LPG Systems Design',                     desc: 'Smart, safe and scalable LPG solutions with expert shop drawings and system design services.' },
+  { icon: HardHat,     title: 'LPG Tank Installation',                  desc: 'End-to-end LPG tank installation from site assessment to final safety commissioning.' },
+  { icon: Wrench,      title: 'Industrial Gas Pipe Installation',        desc: 'Expert craftsmanship with industry-leading standards for your gas pipelines.' },
+  { icon: Wrench,      title: 'LPG Systems Installation',               desc: 'Seamless and secure LPG systems installed with verified expertise.' },
+  { icon: Flame,       title: 'Industrial Burner Installation',          desc: 'High-performance industrial burners for optimal energy efficiency, safety and compliance.' },
+  { icon: HardHat,     title: 'School LPG Systems Solutions',           desc: 'Certified LPG systems for school labs and kitchens — safe, efficient, compliant.' },
+  { icon: Search,      title: 'Maintenance & NDT Testing',              desc: 'Test, maintain and validate gas systems with our NDT testing and maintenance team.' },
+  { icon: ShieldCheck, title: 'LPG Industrial Systems Inspection',      desc: 'Safety, efficiency and compliance inspections by certified LPG inspectors.' },
+  { icon: Wrench,      title: 'LPG Tank Maintenance',                   desc: 'Routine checks and preventive care to keep your LPG tanks safe and compliant.' },
+  { icon: Search,      title: 'Expert LPG Technical Consultancy',       desc: 'Tailored solutions with certified professionals for safe, efficient LPG systems.' },
+];
+
 export function Services() {
   const [managedServices, setManagedServices] = useState<ManagedService[]>([]);
+
   useEffect(() => {
-    api<ManagedService[]>('/services').then(result => setManagedServices(result.data ?? [])).catch(() => undefined);
+    api<ManagedService[]>('/services')
+      .then((result) => setManagedServices(result.data ?? []))
+      .catch(() => undefined);
   }, []);
-  const SERVICES = [
-    { icon: Flame,       title: 'Authorized LPG Products Distribution',        desc: 'The number one authorized distributor of all LPG products — reliable, certified, nationwide.' },
-    { icon: ShieldCheck, title: 'Accessories & Equipment Supply',               desc: 'Flanges, fittings, brass adaptors, regulators and all LPG accessories from certified sources.' },
-    { icon: HardHat,     title: 'LPG Systems Design',                          desc: 'Smart, safe and scalable LPG solutions with expert shop drawings and system design services.' },
-    { icon: HardHat,     title: 'LPG Tank Installation',                       desc: 'End-to-end LPG tank installation from site assessment to final safety commissioning.' },
-    { icon: Wrench,      title: 'Industrial Gas Pipe Installation',             desc: 'Expert craftsmanship with industry-leading standards for your gas pipelines.' },
-    { icon: Wrench,      title: 'LPG Systems Installation',                    desc: 'Seamless and secure LPG systems installed with verified expertise.' },
-    { icon: Flame,       title: 'Industrial Burner Installation',               desc: 'High-performance industrial burners for optimal energy efficiency, safety and compliance.' },
-    { icon: HardHat,     title: 'School LPG Systems Solutions',                desc: 'Certified LPG systems for school labs and kitchens — safe, efficient, compliant.' },
-    { icon: Search,      title: 'Maintenance & NDT Testing',                   desc: 'Test, maintain and validate gas systems with our NDT testing and maintenance team.' },
-    { icon: ShieldCheck, title: 'LPG Industrial Systems Inspection',           desc: 'Safety, efficiency and compliance inspections by certified LPG inspectors.' },
-    { icon: Wrench,      title: 'LPG Tank Maintenance',                        desc: 'Routine checks and preventive care to keep your LPG tanks safe and compliant.' },
-    { icon: Search,      title: 'Expert LPG Technical Consultancy',            desc: 'Tailored solutions with certified professionals for safe, efficient LPG systems.' },
-  ];
+
+  // Render CMS-managed services when available; fall back to static list only
+  // when the API returns nothing (e.g. fresh install before seed).
+  const hasApiData = managedServices.length > 0;
 
   return (
     <>
@@ -154,22 +164,31 @@ export function Services() {
 
       <section className="section" style={{ background: '#fff' }}>
         <div className="wrap">
-          {managedServices.length > 0 && <div className="svc-grid managed-services">
-            {managedServices.map(service => (
-              <article className="svc-card" key={service.id}>
-                {service.imageUrl && <img className="svc-card-image" src={service.imageUrl} alt={service.name} />}
-                <div className="svc-card-copy"><h3>{service.name}</h3><p>{service.shortDesc ?? service.description}</p></div>
-              </article>
-            ))}
-          </div>}
-          <div className="svc-grid legacy-services" aria-hidden="true">
-            {SERVICES.map(({ icon: Icon, title, desc }) => (
-              <div className="svc-card" key={title}>
-                <div className="svc-icon"><Icon size={22} /></div>
-                <h3>{title}</h3><p>{desc}</p>
-              </div>
-            ))}
-          </div>
+          {hasApiData ? (
+            <div className="svc-grid">
+              {managedServices.map((service) => (
+                <article className="svc-card" key={service.id}>
+                  {service.imageUrl && (
+                    <img className="svc-card-image" src={service.imageUrl} alt={service.name} />
+                  )}
+                  <div className="svc-card-copy">
+                    <h3>{service.name}</h3>
+                    <p>{service.shortDesc ?? service.description}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="svc-grid">
+              {STATIC_SERVICES.map(({ icon: Icon, title, desc }) => (
+                <div className="svc-card" key={title}>
+                  <div className="svc-icon"><Icon size={22} /></div>
+                  <h3>{title}</h3>
+                  <p>{desc}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -187,7 +206,6 @@ export function Services() {
     </>
   );
 }
-
 /* ─── Contact ────────────────────────────────────────────────────────────── */
 export function Contact() {
   const [sent, setSent]   = useState(false);
@@ -286,19 +304,34 @@ export function Contact() {
 }
 
 /* ─── FAQ ────────────────────────────────────────────────────────────────── */
+
+// Static fallback items shown while the API loads or if it returns nothing.
+const STATIC_FAQS = [
+  { question: 'What LPG services does Natgas Uganda offer?', answer: 'Natgas Uganda offers authorized LPG distribution, system design, tank and pipe installation, industrial burner installation, school LPG solutions, maintenance and NDT testing, system inspections, and expert technical consultancy.' },
+  { question: 'Is Natgas Uganda an authorized LPG distributor?', answer: 'Yes. Natgas Uganda is an authorized distributor of LPG products for major oil companies in Uganda, operating under the relevant licenses and compliance requirements.' },
+  { question: 'Do you handle residential LPG installations?', answer: 'Yes. We install LPG systems for homes, apartments, hotels, schools and commercial facilities of all sizes, with full safety compliance documentation.' },
+  { question: 'What is NDT testing and why does it matter?', answer: 'Non-Destructive Testing (NDT) verifies the integrity of welds, pipes and materials without damaging the system. It is essential for ensuring your LPG installation is safe and meets regulatory standards.' },
+  { question: 'Do you service schools and institutions?', answer: 'Yes. We specialize in LPG systems for school laboratories and kitchens, providing compliant, safe and cost-effective solutions with minimal disruption.' },
+  { question: 'How do I request a quote?', answer: 'Contact us via the form on this website, call +256 740 938 040 / +256 781 011 751, or email info@natgasuganda.com. Our team will respond promptly.' },
+  { question: 'Where is Natgas Uganda located?', answer: 'Our office is at Kawuku, Entebbe Road, P.O. Box 700332, Uganda. We serve clients across all regions of the country.' },
+  { question: 'Do you offer emergency maintenance services?', answer: 'Yes. Our maintenance team responds to urgent LPG system issues. Contact our office immediately and we will dispatch a qualified engineer.' },
+];
+
+interface FaqItem { id?: string; question: string; answer: string; }
+
 export function FAQ() {
   const [open, setOpen] = useState<number | null>(null);
+  const [items, setItems] = useState<FaqItem[]>(STATIC_FAQS);
 
-  const items = [
-    { q: 'What LPG services does Natgas Uganda offer?', a: 'Natgas Uganda offers authorized LPG distribution, system design, tank and pipe installation, industrial burner installation, school LPG solutions, maintenance and NDT testing, system inspections, and expert technical consultancy.' },
-    { q: 'Is Natgas Uganda an authorized LPG distributor?', a: 'Yes. Natgas Uganda is an authorized distributor of LPG products for major oil companies in Uganda, operating under the relevant licenses and compliance requirements.' },
-    { q: 'Do you handle residential LPG installations?', a: 'Yes. We install LPG systems for homes, apartments, hotels, schools and commercial facilities of all sizes, with full safety compliance documentation.' },
-    { q: 'What is NDT testing and why does it matter?', a: 'Non-Destructive Testing (NDT) verifies the integrity of welds, pipes and materials without damaging the system. It is essential for ensuring your LPG installation is safe and meets regulatory standards.' },
-    { q: 'Do you service schools and institutions?', a: 'Yes. We specialize in LPG systems for school laboratories and kitchens, providing compliant, safe and cost-effective solutions with minimal disruption.' },
-    { q: 'How do I request a quote?', a: 'Contact us via the form on this website, call +256 740 938 040 / +256 781 011 751, or email info@natgasuganda.com. Our team will respond promptly.' },
-    { q: 'Where is Natgas Uganda located?', a: 'Our office is at Kawuku, Entebbe Road, P.O. Box 700332, Uganda. We serve clients across all regions of the country.' },
-    { q: 'Do you offer emergency maintenance services?', a: 'Yes. Our maintenance team responds to urgent LPG system issues. Contact our office immediately and we will dispatch a qualified engineer.' },
-  ];
+  useEffect(() => {
+    api<FaqItem[]>('/faqs')
+      .then((result) => {
+        if (result.data && result.data.length > 0) {
+          setItems(result.data);
+        }
+      })
+      .catch(() => undefined); // keep static fallback on error
+  }, []);
 
   return (
     <>
@@ -314,14 +347,18 @@ export function FAQ() {
         <div className="wrap">
           <div className="faq-list">
             {items.map((item, i) => (
-              <div className="faq-item" key={i}>
-                <button className="faq-q" onClick={() => setOpen(open === i ? null : i)}>
-                  {item.q}
+              <div className="faq-item" key={item.id ?? i}>
+                <button
+                  className="faq-q"
+                  aria-expanded={open === i}
+                  onClick={() => setOpen(open === i ? null : i)}
+                >
+                  {item.question}
                   <span style={{ fontSize: 20, color: 'var(--gold-text)', flexShrink: 0, lineHeight: 1 }}>
                     {open === i ? '−' : '+'}
                   </span>
                 </button>
-                {open === i && <p className="faq-a">{item.a}</p>}
+                {open === i && <p className="faq-a">{item.answer}</p>}
               </div>
             ))}
           </div>
@@ -339,7 +376,6 @@ export function FAQ() {
     </>
   );
 }
-
 /* ─── Privacy ────────────────────────────────────────────────────────────── */
 export function Privacy() {
   return (

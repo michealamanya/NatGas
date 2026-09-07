@@ -1,0 +1,145 @@
+# NATGAS Uganda — Nginx configuration example
+# ──────────────────────────────────────────────
+# Copy to /etc/nginx/sites-available/natgasuganda.com
+# then: sudo ln -s /etc/nginx/sites-available/natgasuganda.com /etc/nginx/sites-enabled/
+#       sudo nginx -t && sudo systemctl reload nginx
+#
+# Assumptions:
+#   - Domain: natgasuganda.com (adjust SERVER_NAME below)
+#   - TLS certificates managed by Certbot (Let's Encrypt)
+#   - API running on 127.0.0.1:3001 via PM2
+#   - React build served from /var/www/natgas/client/dist
+#   - Uploaded files stored at /var/www/natgas/server/uploads
+
+# ── Rate-limiting zone ────────────────────────────────────────────────────────
+# 10 MB zone for tracking unique IPs; 30 requests per second burst.
+limit_req_zone $binary_remote_addr zone=general:10m rate=30r/s;
+limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+
+# ── HTTP → HTTPS redirect ─────────────────────────────────────────────────────
+server {
+    listen 80;
+    listen [::]:80;
+    server_name natgasuganda.com www.natgasuganda.com;
+
+    # Let Certbot manage the ACME challenge directory.
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://natgasuganda.com$request_uri;
+    }
+}
+
+# ── www → apex redirect ───────────────────────────────────────────────────────
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name www.natgasuganda.com;
+
+    ssl_certificate     /etc/letsencrypt/live/natgasuganda.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/natgasuganda.com/privkey.pem;
+    include             /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam         /etc/letsencrypt/ssl-dhparams.pem;
+
+    return 301 https://natgasuganda.com$request_uri;
+}
+
+# ── Main HTTPS server ─────────────────────────────────────────────────────────
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name natgasuganda.com;
+
+    # ── TLS ──────────────────────────────────────────────────────────────────
+    ssl_certificate     /etc/letsencrypt/live/natgasuganda.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/natgasuganda.com/privkey.pem;
+    include             /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam         /etc/letsencrypt/ssl-dhparams.pem;
+
+    # ── Security headers ─────────────────────────────────────────────────────
+    # The API (Helmet) adds its own headers for /api/* responses.
+    # These apply to the static frontend and catch-all responses.
+    add_header X-Frame-Options          "SAMEORIGIN"           always;
+    add_header X-Content-Type-Options   "nosniff"              always;
+    add_header Referrer-Policy          "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy       "geolocation=(), microphone=()" always;
+
+    # ── Logging ──────────────────────────────────────────────────────────────
+    access_log /var/log/nginx/natgas_access.log combined;
+    error_log  /var/log/nginx/natgas_error.log warn;
+
+    # ── Request limits ───────────────────────────────────────────────────────
+    client_max_body_size 12M;   # Must be >= MAX_FILE_SIZE_MB (10 MB) + headers
+
+    # ── API proxy ─────────────────────────────────────────────────────────────
+    # All /api/* requests are forwarded to the Express server on port 3001.
+    location /api/ {
+        limit_req zone=api burst=20 nodelay;
+
+        proxy_pass         http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+
+        # WebSocket upgrade support (not currently used but harmless).
+        proxy_set_header   Upgrade $http_upgrade;
+        proxy_set_header   Connection 'upgrade';
+
+        # Pass real client IP to Express (used for rate limiting and audit logs).
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_set_header   Host $host;
+
+        proxy_cache_bypass $http_upgrade;
+
+        # Timeouts — slightly longer than the server's headersTimeout (66 s).
+        proxy_connect_timeout 10s;
+        proxy_send_timeout    70s;
+        proxy_read_timeout    70s;
+    }
+
+    # ── Uploaded media (local storage mode) ──────────────────────────────────
+    # In production, prefer S3-compatible storage. If using local storage,
+    # serve files directly from Nginx for better performance.
+    location /api/uploads/ {
+        # Rewrite /api/uploads/ to the actual directory path.
+        alias /var/www/natgas/server/uploads/;
+
+        # Cache uploaded assets for 1 day in browsers.
+        expires 1d;
+        add_header Cache-Control "public, immutable";
+
+        # Prevent script execution inside the uploads directory.
+        location ~* \.(php|pl|py|rb|sh|cgi)$ {
+            deny all;
+        }
+    }
+
+    # ── React SPA (frontend) ─────────────────────────────────────────────────
+    root /var/www/natgas/client/dist;
+    index index.html;
+
+    location / {
+        limit_req zone=general burst=60 nodelay;
+
+        # Cache hashed assets (Vite output) for 1 year.
+        location ~* \.(js|css|woff2|woff|ttf|ico|webp|png|jpg|jpeg|svg|gif)$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+            try_files $uri =404;
+        }
+
+        # SPA fallback: all unmatched routes serve index.html so React Router
+        # can handle client-side navigation.
+        try_files $uri $uri/ /index.html;
+    }
+
+    # ── Health check (bypasses rate limit for monitoring probes) ─────────────
+    location = /api/health {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_set_header Host $host;
+        access_log off;
+    }
+}

@@ -1,4 +1,4 @@
-import {
+﻿import {
   ArrowRight, Award, CheckCircle2, ChevronRight,
   CreditCard, Globe, HardHat, MapPin, MessageCircle, Package, Phone,
   Search, ShieldCheck, Truck, Wrench,
@@ -208,7 +208,7 @@ export default function Home() {
       </section>
 
       {/* ── Latest news ── */}
-      <section className="section home-review-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">CUSTOMER FEEDBACK</span><h2>Trusted by homes and businesses.</h2></div></div><div className="review-grid"><blockquote>“The delivery coordination was clear, and the safety guidance was genuinely useful.”<footer>Household customer, Kampala</footer></blockquote><blockquote>“NATGAS helped us plan a more reliable LPG supply for our kitchen operations.”<footer>Commercial customer, Entebbe</footer></blockquote><blockquote>“Professional, responsive and careful about every installation detail.”<footer>Business customer, Central Region</footer></blockquote></div><p className="review-note">Testimonials are displayed only after customer confirmation; these representative placeholders can be replaced with approved reviews in the CMS.</p></div></section>
+      <section className="section home-review-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">CUSTOMER FEEDBACK</span><h2>Trusted by homes and businesses.</h2></div></div><div className="review-grid"><blockquote>“The delivery coordination was clear, and the safety guidance was genuinely useful.”<footer>Household customer, Kampala</footer></blockquote><blockquote>“NATGAS helped us plan a more reliable LPG supply for our kitchen operations.”<footer>Commercial customer, Entebbe</footer></blockquote><blockquote>“Professional, responsive and careful about every installation detail.”<footer>Business customer, Central Region</footer></blockquote></div>{/* Placeholder testimonials — replace with approved customer quotes via the CMS */}</div></section>
 
       <section className="business-cta"><div className="wrap"><div><span className="chip-sm">PARTNER WITH NATGAS</span><h2>Grow your business with dependable LPG supply.</h2><p>Become an authorised dealer or request a commercial and bulk-LPG quotation.</p></div><div className="cta-btns"><Link className="btn btn-primary" to="/contact">Become a dealer</Link><Link className="btn btn-wht" to="/contact">Request a business quote</Link></div></div></section>
 
