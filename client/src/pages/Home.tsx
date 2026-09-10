@@ -7,6 +7,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { api, Job, NewsArticle, Product, ProductCategory } from '../api/client';
 import { addToCart } from '../lib/cart';
+import { useRealtimeRefresh } from '../lib/realtime';
 
 const COLORS = ['cyl-bg-0','cyl-bg-1','cyl-bg-2','cyl-bg-3','cyl-bg-4'];
 const priceLabel = (price?: string | number, currency = 'UGX') => price === undefined || price === null ? 'Price on confirmation' : new Intl.NumberFormat('en-UG', { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(price));
@@ -34,6 +35,13 @@ export default function Home() {
     else q.set('featured', 'true');
     api<Product[]>(`/products?${q}`).then(r => setProducts(r.data ?? [])).catch(() => undefined);
   }, [activeTab]);
+  useRealtimeRefresh(() => {
+    api<ProductCategory[]>('/products/categories').then(r => setCategories(r.data ?? [])).catch(() => undefined);
+    api<NewsArticle[]>('/news?limit=3').then(r => setNews(r.data ?? [])).catch(() => undefined);
+    api<Job[]>('/jobs?limit=3').then(r => setJobs(r.data ?? [])).catch(() => undefined);
+    api<Record<string, unknown>>('/settings/public').then(r => setExperience(Object.fromEntries(Object.entries(r.data ?? {}).map(([key, value]) => [key, String(value ?? '')])))).catch(() => undefined);
+    const q = new URLSearchParams({ limit: '10' }); if (activeTab) q.set('category', activeTab); else q.set('featured', 'true'); api<Product[]>(`/products?${q}`).then(r => setProducts(r.data ?? [])).catch(() => undefined);
+  });
 
   const FALLBACK = ['3kg','6kg','12.5kg','38kg','Flanges'];
   const heroMedia = experience.home_hero_media_url;

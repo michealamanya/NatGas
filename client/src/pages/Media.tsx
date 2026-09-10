@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Image, Users } from 'lucide-react';
 import { api, MediaItem } from '../api/client';
+import { useRealtimeRefresh } from '../lib/realtime';
 
 export default function Media() {
   const [gallery, setGallery] = useState<MediaItem[]>([]);
@@ -10,6 +11,7 @@ export default function Media() {
     api<MediaItem[]>('/media?folder=gallery').then(result => setGallery(result.data ?? [])).catch(() => undefined);
     api<MediaItem[]>('/media?folder=team').then(result => setTeam(result.data ?? [])).catch(() => undefined);
   }, []);
+  useRealtimeRefresh(() => { api<MediaItem[]>('/media?folder=gallery').then(result => setGallery(result.data ?? [])).catch(() => undefined); api<MediaItem[]>('/media?folder=team').then(result => setTeam(result.data ?? [])).catch(() => undefined); });
 
   return <>
     <div className="page-hero"><div className="page-hero-wrap"><h1>Media &amp; our people</h1><p>See NATGAS at work and meet the people behind safe, reliable LPG solutions.</p></div></div>

@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { LogOut, PackageCheck, UserRound } from 'lucide-react';
 import { api, User } from '../api/client';
+import { useRealtimeRefresh } from '../lib/realtime';
 
 type CustomerOrder = { id: string; orderNumber: string; status: string; createdAt: string; deliveryMethod?: string; preferredDate?: string; staffNotes?: string; items: Array<{ id: string; productName: string; quantity: number }> };
 const statusLabel = (status: string) => status.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -12,6 +13,7 @@ export default function CustomerAccount() {
   const [error, setError] = useState(''); const [notice, setNotice] = useState(''); const [params] = useSearchParams(); const navigate = useNavigate();
   const loadAccount = async () => { try { const [account, history] = await Promise.all([api<User>('/auth/me'), api<CustomerOrder[]>('/orders/mine')]); setUser(account.data); setOrders(history.data ?? []); } catch { setUser(null); } };
   useEffect(() => { void loadAccount(); }, []);
+  useRealtimeRefresh(loadAccount);
   useEffect(() => { if (params.get('order') === 'received') setNotice('Your order request was received. Staff will review it and update its status here.'); }, [params]);
   const submit = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); setError(''); try { await api(mode === 'register' ? '/auth/register' : '/auth/login', { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) }); await loadAccount(); window.dispatchEvent(new Event('natgas-auth-change')); navigate(params.get('next') ?? '/account', { replace: true }); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to continue.'); } };
   const saveProfile = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); setError(''); try { const result = await api<User>('/auth/profile', { method: 'PUT', body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) }); setUser(result.data); setNotice(result.message ?? 'Account details updated.'); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to save account details.'); } };

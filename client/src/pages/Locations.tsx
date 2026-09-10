@@ -1,6 +1,7 @@
 import { Mail, MapPin, Navigation, Phone, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { api, Location } from '../api/client';
+import { useRealtimeRefresh } from '../lib/realtime';
 
 export default function Locations() {
   const [clients, setClients] = useState<Location[]>([]);
@@ -11,6 +12,7 @@ export default function Locations() {
       .then((r) => setClients(r.data ?? []))
       .catch(() => undefined);
   }, []);
+  useRealtimeRefresh(() => { api<Location[]>('/locations').then((r) => setClients(r.data ?? [])).catch(() => undefined); });
 
   const found = useMemo(
     () =>

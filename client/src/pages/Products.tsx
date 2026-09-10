@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api, Product, ProductCategory } from '../api/client';
 import { ProductCard } from './Home';
 import { addToCart } from '../lib/cart';
+import { useRealtimeRefresh } from '../lib/realtime';
 
 const COLORS = ['cyl-bg-0','cyl-bg-1','cyl-bg-2','cyl-bg-3','cyl-bg-4'];
 const LIMIT  = 15;
@@ -41,6 +42,7 @@ export default function Products() {
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
   }, [search, activeCat, page]);
+  useRealtimeRefresh(() => { const q = new URLSearchParams({ page: String(page), limit: String(LIMIT) }); if (search) q.set('search', search); if (activeCat) q.set('category', activeCat); if (initFeat && !search && !activeCat) q.set('featured', 'true'); api<Product[]>(`/products?${q}`).then(r => { setProducts(r.data ?? []); setTotal(r.meta?.total ?? 0); setTotalPages(r.meta?.totalPages ?? 1); }).catch(() => undefined); api<ProductCategory[]>('/products/categories').then(r => setCategories(r.data ?? [])).catch(() => undefined); });
 
   return (
     <>

@@ -4,12 +4,24 @@ import express from 'express';
 import { config } from '../config/index.js';
 import { errorResponse } from '../types/index.js';
 import { prisma } from '../database/client.js';
+import { publishUpdate, subscribeToUpdates } from '../services/realtime.service.js';
 
 import authRoutes from './auth.routes.js';
 import publicRoutes from './public.routes.js';
 import adminRoutes from './admin.routes.js';
 
 const router: Router = Router();
+
+// Notify connected screens after successful writes. The event carries no record
+// data; every screen still uses its normal authenticated API request to reload.
+router.use((req, res, next) => {
+  res.on('finish', () => {
+    if (res.statusCode >= 200 && res.statusCode < 300 && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+      publishUpdate(req.path.startsWith('/orders') ? 'orders' : req.path.startsWith('/auth') ? 'accounts' : 'content');
+    }
+  });
+  next();
+});
 
 // ==================== Health check ====================
 router.get('/health', async (_req: Request, res: Response) => {
@@ -29,6 +41,8 @@ router.get('/health', async (_req: Request, res: Response) => {
     },
   });
 });
+
+router.get('/events', subscribeToUpdates);
 
 // ==================== Auth routes ====================
 router.use('/auth', authRoutes);

@@ -2,6 +2,7 @@ import { Loader2, PackageCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import { useRealtimeRefresh } from '../../lib/realtime';
 
 interface OrderItem {
   id: string;
@@ -65,6 +66,7 @@ export default function AdminOrders() {
   };
 
   useEffect(() => { load(); }, []);
+  useRealtimeRefresh(load);
 
   const applyUpdate = async (orderId: string, status: string, staffNotes?: string) => {
     setError('');
