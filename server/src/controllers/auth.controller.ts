@@ -134,6 +134,24 @@ export async function getMe(req: AuthenticatedRequest, res: Response): Promise<v
   res.status(200).json(successResponse(toSafeUser(user)));
 }
 
+// PUT /api/auth/profile - customers manage their own contact details.
+export async function updateProfile(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const { firstName, lastName, phone } = req.body as { firstName: string; lastName: string; phone: string };
+  const user = await prisma.user.update({
+    where: { id: req.user!.id },
+    data: { firstName, lastName, phone },
+  });
+  await createAuditLog({
+    userId: user.id,
+    action: 'UPDATE_PROFILE',
+    resource: 'auth',
+    resourceId: user.id,
+    ipAddress: getClientIp(req),
+    userAgent: req.headers['user-agent'],
+  });
+  res.status(200).json(successResponse(toSafeUser(user), 'Account details updated.'));
+}
+
 // POST /api/auth/forgot-password
 export async function forgotPassword(req: Request, res: Response): Promise<void> {
   const { email } = req.body as { email: string };

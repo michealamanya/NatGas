@@ -1,11 +1,11 @@
 ﻿import {
   ArrowRight, Award, CheckCircle2, ChevronRight,
-  CreditCard, Globe, HardHat, MapPin, MessageCircle, Package, Phone,
+  CreditCard, Globe, HardHat, MapPin, MessageCircle, Package,
   Search, ShieldCheck, Truck, Wrench,
 } from 'lucide-react';
 import { useEffect, useState, type CSSProperties } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { api, Job, Location, NewsArticle, Product, ProductCategory } from '../api/client';
+import { Link } from 'react-router-dom';
+import { api, Job, NewsArticle, Product, ProductCategory } from '../api/client';
 import { addToCart } from '../lib/cart';
 
 const COLORS = ['cyl-bg-0','cyl-bg-1','cyl-bg-2','cyl-bg-3','cyl-bg-4'];
@@ -16,8 +16,6 @@ export default function Home() {
   const [products,   setProducts]   = useState<Product[]>([]);
   const [news,       setNews]        = useState<NewsArticle[]>([]);
   const [jobs,       setJobs]        = useState<Job[]>([]);
-  const [locations,  setLocations]   = useState<Location[]>([]);
-  const [district,   setDistrict]    = useState('');
   const [activeTab,  setActiveTab]   = useState('');
   const [experience, setExperience] = useState<Record<string, string>>({});
 
@@ -25,7 +23,6 @@ export default function Home() {
     api<ProductCategory[]>('/products/categories').then(r => setCategories(r.data ?? [])).catch(() => undefined);
     api<NewsArticle[]>('/news?limit=3').then(r => setNews(r.data ?? [])).catch(() => undefined);
     api<Job[]>('/jobs?limit=3').then(r => setJobs(r.data ?? [])).catch(() => undefined);
-    api<Location[]>('/locations').then(r => setLocations(r.data ?? [])).catch(() => undefined);
     api<Record<string, unknown>>('/settings/public').then(r => {
       setExperience(Object.fromEntries(Object.entries(r.data ?? {}).map(([key, value]) => [key, String(value ?? '')])));
     }).catch(() => undefined);
@@ -85,11 +82,6 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="hero-bar" style={{ display:'flex', alignItems:'center', gap:16, padding:'10px max(3vw,20px)', background:'rgba(0,0,0,.25)', fontSize:12, color:'#7ab8b0' }}>
-          <Phone size={12} /> +256 740 938 040 &nbsp;&nbsp;|&nbsp;&nbsp;
-          <Phone size={12} /> +256 781 011 751 &nbsp;&nbsp;|&nbsp;&nbsp;
-          <MapPin size={12} /> Kawuku, Entebbe Road, Uganda
-        </div>
       </div>
 
       {/* ── Trust strip ── */}
@@ -178,35 +170,6 @@ export default function Home() {
 
       <section className="section home-order-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">HOW TO ORDER</span><h2>Gas delivered in four clear steps.</h2></div><Link className="btn btn-dark" to="/products">Order Gas <ArrowRight size={14}/></Link></div><div className="order-steps">{[{icon:Package,title:'Select product',text:'Choose your cylinder or refill size.'},{icon:MapPin,title:'Share location',text:'Tell us your district and delivery point.'},{icon:CreditCard,title:'Confirm payment',text:'Confirm the agreed payment method.'},{icon:Truck,title:'Receive delivery',text:'Get your LPG supply safely and conveniently.'}].map(({icon:Icon,title,text},index) => <article key={title}><span>{index + 1}</span><Icon size={23}/><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>
 
-      <section className="section dealer-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">DEALER & OUTLET LOCATOR</span><h2>Find LPG near you.</h2></div></div><div className="locator-search"><Search size={18}/><input value={district} onChange={event => setDistrict(event.target.value)} placeholder="Search by district or outlet name" aria-label="Search dealer outlets"/></div><div className="dealer-grid">{locations.filter(location => `${location.name} ${location.district} ${location.region}`.toLowerCase().includes(district.toLowerCase())).slice(0,3).map(location => <article key={location.id}><MapPin size={20}/><h3>{location.name}</h3><p>{location.address}, {location.district}</p><a href={`tel:${location.phone ?? ''}`}>{location.phone ?? 'Contact outlet'}</a></article>)}{!locations.length && <p>Outlet information will appear here as it is added in the CMS.</p>}</div></div></section>
-
-      <section className="section" style={{ background:'var(--cream)', paddingTop:48, paddingBottom:48 }}>
-        <div className="wrap">
-          <div className="section-head">
-            <div>
-              <span className="chip-sm">OUR SERVICES</span>
-              <h2>Full-cycle LPG technical services.</h2>
-            </div>
-            <Link className="link-all" to="/services">All services <ChevronRight size={14} /></Link>
-          </div>
-          <div className="svc-grid">
-            {[
-              { icon: ShieldCheck, t: 'Authorized LPG Distribution',      d: 'Official distributor for major oil companies with reliable last-mile logistics.' },
-              { icon: HardHat,     t: 'LPG Systems Design & Installation', d: 'Shop drawings, system design and end-to-end LPG tank and pipe installation.' },
-              { icon: Wrench,      t: 'Maintenance & NDT Testing',         d: 'Preventive maintenance, emergency repairs and non-destructive testing.' },
-              { icon: CheckCircle2,t: 'LPG Inspections',                   d: 'Certified safety and compliance inspections for industrial LPG systems.' },
-              { icon: Award,       t: 'Equipment & Accessories',           d: 'Flanges, fittings, regulators, brass adaptors and all LPG accessories.' },
-              { icon: Globe,       t: 'Technical Consultancy',             d: 'Expert LPG feasibility studies, risk assessments and regulatory guidance.' },
-            ].map(({ icon: Icon, t, d }) => (
-              <div className="svc-card" key={t}>
-                <div className="svc-icon"><Icon size={22} /></div>
-                <h3>{t}</h3><p>{d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── Latest news ── */}
       <section className="section home-review-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">CUSTOMER FEEDBACK</span><h2>Trusted by homes and businesses.</h2></div></div><div className="review-grid"><blockquote>“The delivery coordination was clear, and the safety guidance was genuinely useful.”<footer>Household customer, Kampala</footer></blockquote><blockquote>“NATGAS helped us plan a more reliable LPG supply for our kitchen operations.”<footer>Commercial customer, Entebbe</footer></blockquote><blockquote>“Professional, responsive and careful about every installation detail.”<footer>Business customer, Central Region</footer></blockquote></div>{/* Placeholder testimonials — replace with approved customer quotes via the CMS */}</div></section>
 
@@ -269,7 +232,7 @@ export default function Home() {
 
 /* ── Reusable cards ─ */
 export function ProductCard({ p, idx }: { p: Product; idx: number }) {
-  const navigate = useNavigate();
+  const [added, setAdded] = useState(false);
   return (
     <article className="pcard">
       <Link to={`/products/${p.slug}`} className={`pcard-img ${p.imageUrl ? '' : COLORS[idx % 5]}`}>
@@ -294,7 +257,7 @@ export function ProductCard({ p, idx }: { p: Product; idx: number }) {
           <span className={`pcard-avail ${p.isAvailable ? 'avail-yes' : 'avail-no'}`}>
             {p.isAvailable ? 'In stock' : 'Unavailable'}
           </span>
-          <button className="pcard-order" disabled={!p.isAvailable} onClick={() => { addToCart(p); navigate('/order'); }}>Add to order <ArrowRight size={12} /></button>
+          <button className="pcard-order" disabled={!p.isAvailable} onClick={() => { addToCart(p); setAdded(true); window.setTimeout(() => setAdded(false), 1800); }}>{added ? 'Added to cart' : 'Add to cart'} <ArrowRight size={12} /></button>
         </div>
       </div>
     </article>

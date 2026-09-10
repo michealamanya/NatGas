@@ -52,19 +52,7 @@ export default function Products() {
         </div>
       </div>
 
-      {/* Category tabs */}
-      <div className="cat-tabs-bar">
-        <div className="cat-tabs wrap">
-          <button className={`cat-tab${activeCat === '' ? ' active' : ''}`} onClick={() => { setActiveCat(''); setPage(1); }}>All</button>
-          {categories.map(c => (
-            <button key={c.id} className={`cat-tab${activeCat === c.slug ? ' active' : ''}`} onClick={() => { setActiveCat(c.slug); setPage(1); }}>
-              {c.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Filter bar */}
+      {/* Filter bar — search + category pills + result count */}
       <div className="filter-bar">
         <div className="filter-wrap">
           <div className="search-field">
@@ -137,6 +125,7 @@ export function ProductDetail() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [mainImg, setMainImg] = useState('');
+  const [added, setAdded] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -204,8 +193,8 @@ export function ProductDetail() {
               <div className="pd-price">{priceLabel(product.price, product.currency)}</div>
 
               <div className="pd-avail">
-                <span style={{ width:8, height:8, borderRadius:'50%', background: product.isAvailable ? '#08705a' : '#9b5b00', display:'inline-block' }} />
-                <span style={{ fontSize:13, fontWeight:600, color: product.isAvailable ? '#08705a' : '#9b5b00' }}>
+                <span style={{ width:8, height:8, borderRadius:'50%', background: product.isAvailable ? 'var(--green-3)' : '#9b5b00', display:'inline-block' }} />
+                <span style={{ fontSize:13, fontWeight:600, color: product.isAvailable ? 'var(--green-3)' : '#9b5b00' }}>
                   {product.isAvailable ? 'In stock' : 'Out of stock'}
                 </span>
                 {product.isFeatured && (
@@ -244,10 +233,10 @@ export function ProductDetail() {
               )}
 
               <div className="pd-actions">
-                <button className="btn btn-primary" disabled={!product.isAvailable} onClick={() => { addToCart(product); navigate('/order'); }}>
-                  {product.isAvailable ? <>Add to order <ArrowRight size={14} /></> : 'Currently unavailable'}
+                <button className="btn btn-primary" disabled={!product.isAvailable} onClick={() => { addToCart(product); setAdded(true); window.setTimeout(() => setAdded(false), 1800); }}>
+                  {product.isAvailable ? <>{added ? 'Added to cart' : 'Add to cart'} <ArrowRight size={14} /></> : 'Currently unavailable'}
                 </button>
-                <Link className="btn btn-outline btn-sm" to="/products">← Back to products</Link>
+                <Link className="btn btn-outline btn-sm" to="/order">View cart</Link>
               </div>
             </div>
           </div>

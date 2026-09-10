@@ -10,6 +10,7 @@ import {
   resetPassword,
   changePassword,
   registerCustomer,
+  updateProfile,
 } from '../controllers/auth.controller.js';
 import {
   loginSchema,
@@ -17,6 +18,7 @@ import {
   resetPasswordSchema,
   changePasswordSchema,
   customerRegisterSchema,
+  customerProfileSchema,
 } from '../validation/auth.schemas.js';
 
 const router: Router = Router();
@@ -30,6 +32,7 @@ router.post('/logout', logout);
 
 // GET /api/auth/me - requires auth
 router.get('/me', requireAuth, getMe);
+router.put('/profile', requireAuth, validate(customerProfileSchema), updateProfile);
 
 // POST /api/auth/forgot-password
 router.post('/forgot-password', authLimiter, validate(forgotPasswordSchema), forgotPassword);

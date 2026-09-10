@@ -14,6 +14,7 @@ const News        = lazy(() => import('./pages/News'));
 const NewsArticle = lazy(() => import('./pages/News').then(m => ({ default: m.NewsArticlePage })));
 const About       = lazy(() => import('./pages/StaticPages').then(m => ({ default: m.About })));
 const Services    = lazy(() => import('./pages/StaticPages').then(m => ({ default: m.Services })));
+const ServiceDetail = lazy(() => import('./pages/StaticPages').then(m => ({ default: m.ServiceDetail })));
 const Contact     = lazy(() => import('./pages/StaticPages').then(m => ({ default: m.Contact })));
 const FAQ         = lazy(() => import('./pages/StaticPages').then(m => ({ default: m.FAQ })));
 const Privacy     = lazy(() => import('./pages/StaticPages').then(m => ({ default: m.Privacy })));
@@ -59,6 +60,7 @@ function ScrollTop() {
 // ── Protected admin wrapper ────────────────────────────────────────────────────
 function AdminGuard({ user, children }: { user: User | null; children: ReactNode }) {
   if (!user) return <Navigate to="/admin/login" replace />;
+  if (user.role === 'CUSTOMER') return <Navigate to="/account" replace />;
   return <>{children}</>;
 }
 
@@ -69,10 +71,15 @@ export default function App() {
 
   // Re-hydrate session on page load
   useEffect(() => {
-    api<User>('/auth/me')
-      .then(r => setUser(r.data))
-      .catch(() => undefined)
-      .finally(() => setAuthReady(true));
+    const syncSession = () => {
+      api<User>('/auth/me')
+        .then(r => setUser(r.data))
+        .catch(() => setUser(null))
+        .finally(() => setAuthReady(true));
+    };
+    syncSession();
+    window.addEventListener('natgas-auth-change', syncSession);
+    return () => window.removeEventListener('natgas-auth-change', syncSession);
   }, []);
 
   // Wait for auth check before rendering protected routes
@@ -90,6 +97,7 @@ export default function App() {
           <Route path="products"     element={<Products />} />
           <Route path="products/:slug" element={<ProductDetail />} />
           <Route path="services"     element={<Services />} />
+          <Route path="services/:slug" element={<ServiceDetail />} />
           <Route path="media"        element={<Media />} />
           <Route path="locations"    element={<Locations />} />
           <Route path="careers"      element={<Careers />} />
@@ -109,7 +117,7 @@ export default function App() {
           path="/admin/login"
           element={
             user
-              ? <Navigate to="/admin/dashboard" replace />
+              ? <Navigate to={user.role === 'CUSTOMER' ? '/account' : '/admin/dashboard'} replace />
               : <Login onLogin={setUser} />
           }
         />

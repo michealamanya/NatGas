@@ -3,7 +3,7 @@
   Mail, MapPin, Phone, Search, ShieldCheck, Wrench,
 } from 'lucide-react';
 import { FormEvent, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { api, Service as ManagedService } from '../api/client';
 
 /* ─── About ─────────────────────────────────────────────────────────────── */
@@ -167,15 +167,16 @@ export function Services() {
           {hasApiData ? (
             <div className="svc-grid">
               {managedServices.map((service) => (
-                <article className="svc-card" key={service.id}>
+                <Link className="svc-card" key={service.id} to={`/services/${service.slug}`} style={{ textDecoration: 'none' }}>
                   {service.imageUrl && (
                     <img className="svc-card-image" src={service.imageUrl} alt={service.name} />
                   )}
                   <div className="svc-card-copy">
                     <h3>{service.name}</h3>
                     <p>{service.shortDesc ?? service.description}</p>
+                    <span className="ncard-more">Explore service <ArrowRight size={13} /></span>
                   </div>
-                </article>
+                </Link>
               ))}
             </div>
           ) : (
@@ -205,6 +206,35 @@ export function Services() {
       </div>
     </>
   );
+}
+
+export function ServiceDetail() {
+  const { slug } = useParams();
+  const [service, setService] = useState<ManagedService | null>(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!slug) return;
+    api<ManagedService>(`/services/${slug}`)
+      .then((result) => setService(result.data ?? null))
+      .catch(() => setError('This service is unavailable or has been moved.'));
+  }, [slug]);
+
+  if (error) return <section className="section"><div className="wrap empty-state"><h1>Service unavailable</h1><p>{error}</p><Link className="btn btn-primary" to="/services">View all services</Link></div></section>;
+  if (!service) return <section className="section"><div className="wrap"><p>Loading service details…</p></div></section>;
+
+  const features = Array.isArray(service.features) ? service.features : [];
+  return <>
+    <div className="page-hero service-detail-hero" style={service.imageUrl ? { backgroundImage: `linear-gradient(90deg, rgba(7, 62, 54, .91), rgba(7, 62, 54, .58)), url(${service.imageUrl})` } : undefined}>
+      <div className="page-hero-wrap"><div className="chip">NATGAS TECHNICAL SERVICE</div><h1>{service.name}</h1><p>{service.shortDesc ?? 'Certified LPG solutions delivered by the NATGAS technical team.'}</p></div>
+    </div>
+    <section className="section"><div className="wrap service-detail-grid">
+      <article className="service-detail-copy"><span className="chip-sm">SERVICE OVERVIEW</span><h2>Safe, practical LPG support from planning to delivery.</h2><p>{service.description ?? service.shortDesc ?? 'Contact NATGAS for a tailored solution.'}</p>
+        {features.length > 0 && <><h3>What this service includes</h3><ul>{features.map((feature) => <li key={feature}><CheckCircle2 size={17} />{feature}</li>)}</ul></>}
+      </article>
+      <aside className="service-detail-cta"><span className="chip-sm">REQUEST A QUOTE</span><h2>Talk to a NATGAS specialist.</h2><p>Tell us about your site, equipment or LPG requirement and our team will guide the next step.</p><Link className="btn btn-primary" to={`/contact?service=${encodeURIComponent(service.name)}`}>Request this service <ArrowRight size={14} /></Link><Link className="btn btn-outline" to="/services">All services</Link></aside>
+    </div></section>
+  </>;
 }
 /* ─── Contact ────────────────────────────────────────────────────────────── */
 export function Contact() {

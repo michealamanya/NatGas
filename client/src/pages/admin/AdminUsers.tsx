@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { KeyRound, Plus, ShieldCheck, Users } from 'lucide-react';
+import { KeyRound, Pencil, Plus, ShieldCheck, Users } from 'lucide-react';
 import { api } from '../../api/client';
+import ConfirmDialog from '../../components/ConfirmDialog';
 
 type Account = {
   id: string; firstName: string; lastName: string; email: string; username: string;
@@ -15,6 +16,8 @@ export default function AdminUsers() {
   const [showForm, setShowForm] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
+  const [editing, setEditing] = useState<Account | null>(null);
+  const [pendingAction, setPendingAction] = useState<{ account: Account; kind: 'status' | 'reset' } | null>(null);
 
   const load = async () => {
     try {
@@ -57,20 +60,25 @@ export default function AdminUsers() {
   };
 
   const reset = async (id: string) => {
-    if (!window.confirm('Send a password-reset email to this account?')) return;
     try {
       const result = await api(`/admin/users/${id}/reset-password`, { method: 'POST' });
       message(result.message ?? 'Password reset issued.');
     } catch (cause) { showError(cause, 'Unable to reset password.'); }
   };
 
-  const setPassword = async (id: string) => {
-    const password = window.prompt('Set a temporary password. It needs 8+ characters with uppercase, lowercase, a number and a symbol.');
-    if (!password) return;
+  const update = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editing) return;
+    setError('');
+    const fields = Object.fromEntries(new FormData(event.currentTarget));
+    const password = String(fields.password ?? '');
+    delete fields.password;
     try {
-      const result = await api(`/admin/users/${id}/password`, { method: 'PUT', body: JSON.stringify({ password }) });
-      message(result.message ?? 'Password updated.');
-    } catch (cause) { showError(cause, 'Unable to set password.'); }
+      await api(`/admin/users/${editing.id}`, { method: 'PUT', body: JSON.stringify(fields) });
+      if (password) await api(`/admin/users/${editing.id}/password`, { method: 'PUT', body: JSON.stringify({ password }) });
+      message(password ? 'Account details and temporary password updated.' : 'Account details updated.');
+      setEditing(null); await load();
+    } catch (cause) { showError(cause, 'Unable to update this account.'); }
   };
 
   const customers = accounts.filter(account => account.role === 'CUSTOMER');
@@ -99,6 +107,17 @@ export default function AdminUsers() {
       </div>
       <div className="admin-form-actions"><button type="button" className="btn btn-outline" onClick={() => setShowForm(false)}>Cancel</button><button className="btn btn-dark">Create account</button></div>
     </form>}
+    {editing && <form className="admin-card admin-card-body admin-form" onSubmit={update}>
+      <h2>Edit {editing.role === 'CUSTOMER' ? 'customer' : 'staff'} account</h2>
+      <p className="admin-page-sub">Update contact details, access profile information, or set a temporary password. Password changes require the account holder to choose a new password at sign-in.</p>
+      <div className="form-grid">
+        <label>First name<input required name="firstName" defaultValue={editing.firstName} /></label><label>Last name<input required name="lastName" defaultValue={editing.lastName} /></label>
+        <label>Email<input required type="email" name="email" defaultValue={editing.email} /></label><label>Username<input required name="username" defaultValue={editing.username} /></label>
+        <label>Phone number<input name="phone" defaultValue={editing.phone ?? ''} /></label><label>Department<input name="department" defaultValue={editing.department ?? ''} disabled={editing.role === 'CUSTOMER'} /></label>
+        <label>New temporary password <small>(leave blank to keep current)</small><input name="password" type="password" minLength={8} placeholder="Uppercase, lowercase, number & symbol" /></label>
+      </div>
+      <div className="admin-form-actions"><button type="button" className="btn btn-outline" onClick={() => setEditing(null)}>Cancel</button><button className="btn btn-primary">Save account</button></div>
+    </form>}
     <section className="admin-card">
       <div className="admin-card-head"><h3><Users size={16} /> All accounts</h3><span>{accounts.length} total</span></div>
       <div className="table-scroll"><table className="data-table"><thead><tr><th>Account</th><th>Access</th><th>Department / phone</th><th>Status</th><th>Last login</th><th>Actions</th></tr></thead>
@@ -109,12 +128,14 @@ export default function AdminUsers() {
           <td><span className={`status-pill ${account.status.toLowerCase()}`}>{account.status}</span></td>
           <td>{account.lastLoginAt ? new Date(account.lastLoginAt).toLocaleDateString() : 'Never'}</td>
           <td><div className="staff-actions">
-            {account.role !== 'SUPER_ADMIN' && <button className="tact" onClick={() => changeStatus(account)}><ShieldCheck size={13} />{account.status === 'ACTIVE' ? 'Suspend' : 'Activate'}</button>}
-            <button className="tact" onClick={() => setPassword(account.id)}><KeyRound size={13} /> Set password</button>
-            <button className="tact" onClick={() => reset(account.id)}><KeyRound size={13} /> Reset</button>
+            <button className="tact" onClick={() => setEditing(account)}><Pencil size={13} /> Edit</button>
+            {account.role !== 'SUPER_ADMIN' && <button className="tact" onClick={() => setPendingAction({ account, kind: 'status' })}><ShieldCheck size={13} />{account.status === 'ACTIVE' ? 'Suspend' : 'Activate'}</button>}
+            <button className="tact" onClick={() => setEditing(account)}><KeyRound size={13} /> Password</button>
+            <button className="tact" onClick={() => setPendingAction({ account, kind: 'reset' })}><KeyRound size={13} /> Reset</button>
           </div></td>
         </tr>)}{!rows.length && <tr><td colSpan={6}>No accounts found.</td></tr>}</tbody>
       </table></div>
     </section>
+    <ConfirmDialog open={Boolean(pendingAction)} title={pendingAction?.kind === 'reset' ? 'Reset account password?' : `${pendingAction?.account.status === 'ACTIVE' ? 'Suspend' : 'Activate'} this account?`} message={pendingAction?.kind === 'reset' ? `A new temporary password will be generated for ${pendingAction?.account.email}.` : pendingAction?.account.status === 'ACTIVE' ? `${pendingAction?.account.email} will no longer be able to sign in or place orders.` : `${pendingAction?.account.email} will be able to sign in again.`} confirmLabel={pendingAction?.kind === 'reset' ? 'Reset password' : pendingAction?.account.status === 'ACTIVE' ? 'Suspend account' : 'Activate account'} onCancel={() => setPendingAction(null)} onConfirm={() => { const action = pendingAction; setPendingAction(null); if (action?.kind === 'reset') void reset(action.account.id); else if (action) void changeStatus(action.account); }} />
   </div>;
 }

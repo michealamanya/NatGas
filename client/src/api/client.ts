@@ -17,7 +17,12 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<A
     headers,
   });
   const body = await response.json().catch(() => ({ message: 'Unable to reach NATGAS services.' }));
-  if (!response.ok) throw new Error(body.message ?? 'Request failed.');
+  if (!response.ok) {
+    const fieldErrors = body.errors && typeof body.errors === 'object'
+      ? Object.values(body.errors as Record<string, string[]>).flat().filter(Boolean).join(' ')
+      : '';
+    throw new Error(fieldErrors || body.message || 'Request failed.');
+  }
   return body;
 }
 

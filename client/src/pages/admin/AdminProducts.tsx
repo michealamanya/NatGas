@@ -11,6 +11,7 @@ export default function AdminProducts() {
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [showForm,   setShowForm]   = useState(false);
+  const [showCategories, setShowCategories] = useState(false);
   const [editing,    setEditing]    = useState<AdminProduct | null>(null);
   const [toast,      setToast]      = useState<Toast>(null);
   const [features,   setFeatures]   = useState<string[]>(['']);
@@ -38,6 +39,8 @@ export default function AdminProducts() {
     load();
     api<ProductCategory[]>('/products/categories').then(r => setCategories(r.data ?? [])).catch(() => undefined);
   }, []);
+
+  const loadCategories = () => api<ProductCategory[]>('/products/categories').then(r => setCategories(r.data ?? [])).catch(() => undefined);
 
   const openCreate = () => {
     setEditing(null); setFeatures(['']); setImageFile(null); setImagePreview(''); setExistingGallery([]); setGalleryFiles([]); setShowForm(true);
@@ -155,6 +158,21 @@ export default function AdminProducts() {
     }
   };
 
+  const createCategory = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const data = Object.fromEntries(new FormData(event.currentTarget));
+    try {
+      const result = await api('/admin/product-categories', { method: 'POST', body: JSON.stringify({ ...data, displayOrder: Number(data.displayOrder || 0), isActive: true }) });
+      notify(result.message ?? 'Category created.'); event.currentTarget.reset(); loadCategories();
+    } catch (err) { notify(err instanceof Error ? err.message : 'Could not create category.', 'error'); }
+  };
+
+  const removeCategory = async (category: ProductCategory) => {
+    if (!confirm(`Remove “${category.name}”? Products in it will remain in the catalogue but become uncategorised.`)) return;
+    try { await api(`/admin/product-categories/${category.id}`, { method: 'DELETE' }); notify('Category removed.'); loadCategories(); load(); }
+    catch (err) { notify(err instanceof Error ? err.message : 'Could not remove category.', 'error'); }
+  };
+
   return (
     <>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom: 24 }}>
@@ -162,8 +180,10 @@ export default function AdminProducts() {
           <h1 className="admin-page-title">Products</h1>
           <p className="admin-page-sub">Manage the product catalogue. Published products appear on the public website.</p>
         </div>
-        <button className="btn btn-primary" onClick={openCreate}><Plus size={15} /> Add product</button>
+        <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}><button className="btn btn-outline" onClick={() => setShowCategories(v => !v)}>Manage categories</button><button className="btn btn-primary" onClick={openCreate}><Plus size={15} /> Add product</button></div>
       </div>
+
+      {showCategories && <section className="admin-card admin-card-body admin-form" style={{ marginBottom:24 }}><h2>Catalogue categories</h2><p className="admin-page-sub">Create categories for accessories, equipment, cylinders, and any new product range. They appear automatically as filters on the public catalogue.</p><form className="form-row-2" onSubmit={createCategory}><div className="form-group"><label>Category name<input required name="name" placeholder="e.g. Accessories & Equipment" /></label></div><div className="form-group"><label>Display order<input type="number" name="displayOrder" defaultValue="0" /></label></div><div className="form-group"><label>Description<input name="description" placeholder="Optional short description" /></label></div><div className="form-group" style={{ display:'flex', alignItems:'end' }}><button className="btn btn-primary"><Plus size={14}/> Add category</button></div></form><div className="category-admin-list">{categories.map(category => <div key={category.id}><span><b>{category.name}</b><small>{category.description || 'No description'}</small></span><button type="button" className="tact" onClick={() => removeCategory(category)}><Trash2 size={13}/> Remove</button></div>)}{!categories.length && <p className="media-empty">No categories yet.</p>}</div></section>}
 
       {/* Create/Edit form */}
       {showForm && (

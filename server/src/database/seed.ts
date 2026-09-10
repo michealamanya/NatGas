@@ -5,6 +5,9 @@ import { createSlug } from '../utils/slug.js';
 const prisma = new PrismaClient();
 
 async function main(): Promise<void> {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('Seeding is disabled in production. Enter real NATGAS content through the admin portal instead.');
+  }
   console.log('\n🌱 Starting NATGAS Uganda database seed...\n');
 
   // ==================== SUPER ADMIN ====================
