@@ -690,6 +690,8 @@ h1,h2,h3,h4 { line-height: 1.2; color: var(--green); }
 }
 .home-value-grid article,.order-steps article,.dealer-grid article { padding:28px 26px; }
 .home-value-grid article svg,.order-steps article svg,.dealer-grid article svg,.svc-icon { color:var(--gold-text); }
+.engineering-focus-section { background:linear-gradient(180deg,#f6fbf4,#fff); }.engineering-heading { align-items:flex-end; }.engineering-heading h2 { max-width:720px; margin-top:9px; }.engineering-heading p { max-width:720px; margin-top:10px; color:var(--muted); font-size:15px; line-height:1.7; }.engineering-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:28px; }.engineering-grid article { padding:28px; border:1px solid rgba(40,124,27,.15); border-radius:20px; background:#fff; box-shadow:0 8px 22px rgba(35,111,24,.07); }.engineering-grid svg { color:var(--gold-text); }.engineering-grid h3 { margin:16px 0 9px; font-size:18px; }.engineering-grid p { min-height:68px; color:var(--muted); font-size:13px; line-height:1.7; }.engineering-grid a { display:inline-flex; align-items:center; gap:5px; margin-top:15px; color:var(--green-3); font-size:13px; font-weight:800; }
+.distribution-section { background:var(--green); color:#fff; }.distribution-grid { display:grid; grid-template-columns:1.12fr .88fr; gap:42px; align-items:center; }.distribution-section h2 { color:#fff; margin:10px 0; font-family:'Playfair Display',Georgia,serif; font-size:clamp(28px,3.2vw,40px); }.distribution-map-card>p { max-width:620px; color:#d9edd3; font-size:15px; line-height:1.75; }.distribution-map-card .chip-sm,.distribution-points .chip-sm { background:rgba(255,255,255,.1); color:#f6b943; border-color:rgba(255,255,255,.15); }.uganda-footprint { position:relative; height:260px; max-width:420px; margin:22px 0; border-radius:42% 52% 35% 46%; background:linear-gradient(145deg,#3c9229,#1c6214); border:1px solid rgba(255,255,255,.25); box-shadow:inset 0 0 0 12px rgba(255,255,255,.04); overflow:hidden; }.footprint-line { position:absolute; height:2px; background:rgba(245,177,32,.85); transform-origin:left; }.line-one { width:220px; top:118px; left:74px; transform:rotate(-22deg); }.line-two { width:172px; top:82px; left:130px; transform:rotate(63deg); }.footprint-pin { position:absolute; display:flex; align-items:center; gap:3px; color:#fff; font-size:10px; }.footprint-pin svg { color:var(--gold-2); fill:rgba(224,149,10,.25); }.pin-central { left:44%; top:50%; }.pin-east { right:12%; top:42%; }.pin-west { left:13%; top:63%; }.pin-north { left:46%; top:18%; }.distribution-points { padding:28px; border-radius:20px; background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.15); }.distribution-points>div:first-child { margin-bottom:12px; }.distribution-points>article { display:flex; align-items:flex-start; gap:11px; padding:14px 0; border-bottom:1px solid rgba(255,255,255,.14); }.distribution-points>article>svg { flex:none; margin-top:3px; color:var(--gold-2); }.distribution-points h3 { color:#fff; font-size:14px; margin-bottom:3px; }.distribution-points p { color:#d9edd3; font-size:12px; line-height:1.5; }.distribution-points article a { color:#f6b943; font-size:12px; font-weight:700; }.distribution-directions { margin-left:auto; white-space:nowrap; }.distribution-points>.link-all { color:#fff; margin-top:16px; }
 .svc-card { border-top-width:3px; padding:28px 26px; }
 .ncard { border-radius:20px; }
 .ncard-img { height:190px; }
@@ -739,6 +741,8 @@ h1,h2,h3,h4 { line-height: 1.2; color: var(--green); }
   .nav-dropdown .dropdown-menu { position:static; box-shadow:none; border:0; background:var(--light); border-radius:4px; margin-top:2px; }
   .hero-inner { grid-template-columns:1fr; }
   .home-value-grid { grid-template-columns:repeat(2,1fr); }
+  .engineering-grid { grid-template-columns:1fr; }
+  .distribution-grid { grid-template-columns:1fr; }
   .order-steps { grid-template-columns:repeat(2,1fr); }
   .home-utility-grid { grid-template-columns:1fr; }
   .dealer-grid { grid-template-columns:repeat(2,1fr); }
@@ -782,6 +786,7 @@ h1,h2,h3,h4 { line-height: 1.2; color: var(--green); }
   .service-detail-cta { padding:24px; }
   .media-gallery, .media-admin-grid, .team-grid { grid-template-columns:1fr; }
   .home-value-grid, .order-steps, .dealer-grid { grid-template-columns:1fr; }
+  .uganda-footprint { height:210px; transform:scale(.94); transform-origin:left top; margin-bottom:8px; }
   .fg-row2, .form-row2 { grid-template-columns:1fr; }
   .jobs-page-header { flex-direction:column; }
   .jobs-page-header .btn { width:100%; justify-content:center; }

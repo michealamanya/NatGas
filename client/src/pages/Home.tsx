@@ -5,7 +5,7 @@
 } from 'lucide-react';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
-import { api, Job, NewsArticle, Product, ProductCategory } from '../api/client';
+import { api, Job, Location, NewsArticle, Product, ProductCategory } from '../api/client';
 import { addToCart } from '../lib/cart';
 import { useRealtimeRefresh } from '../lib/realtime';
 
@@ -17,6 +17,7 @@ export default function Home() {
   const [products,   setProducts]   = useState<Product[]>([]);
   const [news,       setNews]        = useState<NewsArticle[]>([]);
   const [jobs,       setJobs]        = useState<Job[]>([]);
+  const [networkPoints, setNetworkPoints] = useState<Location[]>([]);
   const [activeTab,  setActiveTab]   = useState('');
   const [experience, setExperience] = useState<Record<string, string>>({});
 
@@ -24,6 +25,7 @@ export default function Home() {
     api<ProductCategory[]>('/products/categories').then(r => setCategories(r.data ?? [])).catch(() => undefined);
     api<NewsArticle[]>('/news?limit=3').then(r => setNews(r.data ?? [])).catch(() => undefined);
     api<Job[]>('/jobs?limit=3').then(r => setJobs(r.data ?? [])).catch(() => undefined);
+    api<Location[]>('/locations').then(r => setNetworkPoints(r.data ?? [])).catch(() => undefined);
     api<Record<string, unknown>>('/settings/public').then(r => {
       setExperience(Object.fromEntries(Object.entries(r.data ?? {}).map(([key, value]) => [key, String(value ?? '')])));
     }).catch(() => undefined);
@@ -39,6 +41,7 @@ export default function Home() {
     api<ProductCategory[]>('/products/categories').then(r => setCategories(r.data ?? [])).catch(() => undefined);
     api<NewsArticle[]>('/news?limit=3').then(r => setNews(r.data ?? [])).catch(() => undefined);
     api<Job[]>('/jobs?limit=3').then(r => setJobs(r.data ?? [])).catch(() => undefined);
+    api<Location[]>('/locations').then(r => setNetworkPoints(r.data ?? [])).catch(() => undefined);
     api<Record<string, unknown>>('/settings/public').then(r => setExperience(Object.fromEntries(Object.entries(r.data ?? {}).map(([key, value]) => [key, String(value ?? '')])))).catch(() => undefined);
     const q = new URLSearchParams({ limit: '10' }); if (activeTab) q.set('category', activeTab); else q.set('featured', 'true'); api<Product[]>(`/products?${q}`).then(r => setProducts(r.data ?? [])).catch(() => undefined);
   });
@@ -59,28 +62,28 @@ export default function Home() {
           <div className="hero-copy">
             <div className="hero-badge">
               <ShieldCheck size={11} style={{ verticalAlign:'middle', marginRight:4 }} />
-              Authorized LPG Distributor &amp; Technical Services · Uganda
+              Gas Engineering &amp; LPG Infrastructure · Uganda
             </div>
             <h1 className="hero-h1">
-              {experience.homepage_hero_title || 'Safe LPG systems for'}<br /><em>homes, business and industry.</em>
+              {experience.homepage_hero_title || 'Engineering safe LPG'}<br /><em>systems that perform.</em>
             </h1>
             <p className="hero-sub">
-              {experience.homepage_hero_subtitle || 'Certified LPG distribution, system design, installation, maintenance and NDT testing for homes, businesses and industries across Uganda.'}
+              {experience.homepage_hero_subtitle || 'From shop drawings and reticulated gas systems to installation, inspection, maintenance and NDT—NATGAS engineers dependable LPG infrastructure for Uganda.'}
             </p>
             <div className="hero-btns">
-              <Link className="btn btn-primary" to="/products">
-                Order now <ArrowRight size={14} />
+              <Link className="btn btn-primary" to="/contact">
+                Request an engineering quote <ArrowRight size={14} />
               </Link>
-              <Link className="btn btn-wht" to="/locations">Find a dealer</Link>
+              <Link className="btn btn-wht" to="/services">Explore engineering services</Link>
             </div>
           </div>
 
           <div className="hero-stats">
             {[
-              { icon: ShieldCheck, title: 'Certified & Authorized', sub: 'Official distributor for oil companies' },
-              { icon: Award,       title: 'UNBS Compliant',         sub: 'Meets national safety standards' },
-              { icon: Globe,       title: 'Nationwide',             sub: 'All regions of Uganda' },
-              { icon: HardHat,     title: 'Expert Engineers',       sub: 'Licensed LPG professionals' },
+              { icon: HardHat,     title: 'Gas Engineering',        sub: 'Design, drawings & installation' },
+              { icon: Award,       title: 'Safety & Compliance',    sub: 'Inspection, testing & standards' },
+              { icon: Wrench,      title: 'Lifecycle Support',      sub: 'Maintenance & technical consultancy' },
+              { icon: Globe,       title: 'Distribution Network',   sub: 'Refills and reliable LPG supply' },
             ].map(({ icon: Icon, title, sub }) => (
               <div className="hero-stat-card" key={title}>
                 <div className="hero-stat-icon"><Icon size={18} /></div>
@@ -96,11 +99,11 @@ export default function Home() {
       <div className="promo-strip">
         <div className="promo-strip-inner">
           {[
-            { icon: Truck,        title: 'Nationwide Delivery',    sub: 'We serve all regions of Uganda' },
-            { icon: ShieldCheck,  title: 'Certified Products',     sub: 'UNBS approved equipment' },
-            { icon: CheckCircle2, title: 'Authorized Distributor', sub: 'Official oil company partner' },
-            { icon: HardHat,      title: 'Expert Installation',    sub: 'Licensed technical engineers' },
-            { icon: Wrench,       title: '24/7 Maintenance',       sub: 'Emergency support available' },
+            { icon: HardHat,      title: 'LPG System Design',      sub: 'Shop drawings and site engineering' },
+            { icon: Wrench,       title: 'Installation & Testing', sub: 'Commissioning and NDT support' },
+            { icon: ShieldCheck,  title: 'Safety Inspection',      sub: 'Compliance-led system reviews' },
+            { icon: Award,        title: 'Technical Consultancy',  sub: 'Practical LPG expertise' },
+            { icon: Truck,        title: 'Authorized Distribution',sub: 'Refills, equipment and logistics' },
           ].map(({ icon: Icon, title, sub }) => (
             <div className="promo-item" key={title}>
               <div className="promo-icon"><Icon size={18} /></div>
@@ -109,6 +112,8 @@ export default function Home() {
           ))}
         </div>
       </div>
+
+      <section className="section engineering-focus-section"><div className="wrap"><div className="section-head engineering-heading"><div><span className="chip-sm">GAS ENGINEERING</span><h2>Engineering LPG systems from concept to safe operation.</h2><p>We combine design capability, field execution and long-term technical support for homes, institutions, hospitality and industry.</p></div><Link className="btn btn-dark" to="/services">Our engineering services <ArrowRight size={14}/></Link></div><div className="engineering-grid">{[{icon:HardHat,title:'Design & shop drawings',text:'Smart, scalable LPG designs, reticulated systems and site assessments.'},{icon:Wrench,title:'Installation & commissioning',text:'Tanks, pipelines, burners and complete LPG systems installed by verified engineers.'},{icon:Search,title:'Inspection, NDT & maintenance',text:'Testing, compliance checks, repairs and preventive care across the system lifecycle.'}].map(({icon:Icon,title,text})=><article key={title}><Icon size={25}/><h3>{title}</h3><p>{text}</p><Link to="/services">Learn more <ArrowRight size={13}/></Link></article>)}</div></div></section>
 
       {/* ── Product category tabs + grid ── */}
       <div className="cat-tabs-bar">
@@ -172,6 +177,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <section className="section distribution-section"><div className="wrap distribution-grid"><div className="distribution-map-card"><span className="chip-sm">DISTRIBUTION FOOTPRINT</span><h2>Engineering-led, backed by dependable LPG supply.</h2><p>Our distribution network supports engineering clients and households with refill access, equipment and responsive delivery coordination.</p><div className="uganda-footprint" aria-label="Uganda distribution footprint illustration"><span className="footprint-line line-one"/><span className="footprint-line line-two"/><span className="footprint-pin pin-central"><MapPin size={18}/><b>Central</b></span><span className="footprint-pin pin-east"><MapPin size={18}/><b>Eastern</b></span><span className="footprint-pin pin-west"><MapPin size={18}/><b>Western</b></span><span className="footprint-pin pin-north"><MapPin size={18}/><b>Northern</b></span></div><Link className="btn btn-primary" to="/locations">Find a refill point or contact <ArrowRight size={14}/></Link></div><div className="distribution-points"><div><span className="chip-sm">NETWORK CONTACTS</span><h2>Nearby support when you need it.</h2></div>{networkPoints.slice(0,3).map(point=><article key={point.id}><MapPin size={18}/><div><h3>{point.name}</h3><p>{point.address}, {point.district}</p>{point.phone && <a href={`tel:${point.phone}`}>{point.phone}</a>}</div><a className="distribution-directions" href={point.latitude && point.longitude ? `https://www.google.com/maps?q=${point.latitude},${point.longitude}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${point.name}, ${point.address}, Uganda`)}`} target="_blank" rel="noreferrer">Directions</a></article>)}{!networkPoints.length && <article><MapPin size={18}/><div><h3>Kawuku, Entebbe Road</h3><p>Contact NATGAS for nearby refill support and distribution enquiries.</p><a href="tel:+256740938040">+256 740 938 040</a></div></article>}<Link className="link-all" to="/locations">View network contacts <ChevronRight size={14}/></Link></div></div></section>
 
       {/* ── Services ── */}
       <section className="section home-value-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">WHY CHOOSE NATGAS</span><h2>Energy delivered with safety and care.</h2></div></div><div className="home-value-grid">{[{icon:ShieldCheck,title:'Safety first',text:'Certified cylinders, safe handling guidance and trained support.'},{icon:Truck,title:'Reliable supply',text:'Dependable LPG availability and convenient delivery coordination.'},{icon:CheckCircle2,title:'Genuine cylinders',text:'Quality-checked NATGAS products and trusted accessories.'},{icon:MessageCircle,title:'Customer support',text:'Helpful assistance for homes, dealers and commercial customers.'}].map(({icon:Icon,title,text}) => <article key={title}><Icon size={24}/><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>
