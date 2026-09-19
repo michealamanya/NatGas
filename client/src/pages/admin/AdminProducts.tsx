@@ -1,6 +1,7 @@
 import { CheckCircle2, Loader2, Plus, Trash2, X } from 'lucide-react';
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { api, Product, ProductCategory } from '../../api/client';
+import { getCategoryPresentation } from '../../lib/product-category';
 
 interface AdminProduct extends Product { updatedAt: string; }
 
@@ -21,6 +22,7 @@ export default function AdminProducts() {
   const [imagePreview, setImagePreview] = useState('');
   const [existingGallery, setExistingGallery] = useState<string[]>([]);
   const [galleryFiles, setGalleryFiles] = useState<{ file: File; preview: string }[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
 
   const notify = (msg: string, type: 'success'|'error' = 'success') => {
     setToast({ msg, type });
@@ -43,10 +45,11 @@ export default function AdminProducts() {
   const loadCategories = () => api<ProductCategory[]>('/products/categories').then(r => setCategories(r.data ?? [])).catch(() => undefined);
 
   const openCreate = () => {
-    setEditing(null); setFeatures(['']); setImageFile(null); setImagePreview(''); setExistingGallery([]); setGalleryFiles([]); setShowForm(true);
+    setEditing(null); setSelectedCategoryId(''); setFeatures(['']); setImageFile(null); setImagePreview(''); setExistingGallery([]); setGalleryFiles([]); setShowForm(true);
   };
   const openEdit = (p: AdminProduct) => {
     setEditing(p);
+    setSelectedCategoryId(p.category?.id ?? '');
     const f = Array.isArray(p.features) ? p.features as string[] : [];
     setFeatures(f.length ? f : ['']);
     setImagePreview(p.imageUrl ?? '');
@@ -56,6 +59,8 @@ export default function AdminProducts() {
     setShowForm(true);
   };
   const closeForm = () => { setShowForm(false); setEditing(null); };
+  const selectedCategory = categories.find(category => category.id === selectedCategoryId);
+  const categoryPresentation = getCategoryPresentation(selectedCategory);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -91,6 +96,13 @@ export default function AdminProducts() {
       currency:         String(fd.get('currency') ?? 'UGX'),
       features:         cleanFeatures,
     };
+    const specifications = Object.fromEntries(
+      String(fd.get('specificationsText') ?? '')
+        .split('\n')
+        .map(line => line.split(':').map(value => value.trim()))
+        .filter(([key, value]) => key && value),
+    );
+    payload.specifications = Object.keys(specifications).length ? specifications : null;
     // Upload image first if selected
     if (imageFile) {
       const imgFd = new FormData();
@@ -197,17 +209,17 @@ export default function AdminProducts() {
               <div className="form-row-2">
                 <div className="form-group">
                   <label>Product name *</label>
-                  <input required name="name" defaultValue={editing?.name} placeholder="e.g. 13kg LPG Cylinder" />
+                  <input required name="name" defaultValue={editing?.name} placeholder={`e.g. ${selectedCategory?.name ? `${selectedCategory.name} item` : 'product name'}`} />
                 </div>
                 <div className="form-group">
-                  <label>Cylinder / size</label>
-                  <input name="cylinderSize" defaultValue={editing?.cylinderSize ?? ''} placeholder="e.g. 13kg" />
+                  <label>{categoryPresentation.detailLabel} <small>(optional)</small></label>
+                  <input name="cylinderSize" defaultValue={editing?.cylinderSize ?? ''} placeholder={categoryPresentation.detailPlaceholder} />
                 </div>
               </div>
               <div className="form-row-2">
                 <div className="form-group">
                   <label>Category</label>
-                  <select name="categoryId" defaultValue={editing?.category?.id ?? ''}>
+                  <select name="categoryId" value={selectedCategoryId} onChange={event => setSelectedCategoryId(event.target.value)}>
                     <option value="">— No category —</option>
                     {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
@@ -231,7 +243,11 @@ export default function AdminProducts() {
                 <textarea name="description" rows={4} defaultValue={editing?.description ?? ''} placeholder="Detailed product description…" />
               </div>
               <div className="form-group">
-                <label>Safety information</label>
+                <label>Technical specifications <small>(one per line)</small></label>
+                <textarea name="specificationsText" rows={3} defaultValue={editing?.specifications ? Object.entries(editing.specifications).map(([key, value]) => `${key}: ${value}`).join('\n') : ''} placeholder={categoryPresentation.specificationHint} />
+              </div>
+              <div className="form-group">
+                <label>Safety / handling information <small>(optional)</small></label>
                 <textarea name="safetyInfo" rows={2} defaultValue={editing?.safetyInfo ?? ''} />
               </div>
 
@@ -333,7 +349,7 @@ export default function AdminProducts() {
           <div className="data-table-wrap">
             <table className="data-table">
               <thead>
-                <tr><th>Product</th><th>Category</th><th>Size</th><th>Status</th><th>Stock</th><th>Featured</th><th>Actions</th></tr>
+                <tr><th>Product</th><th>Category</th><th>Size / specification</th><th>Status</th><th>Stock</th><th>Featured</th><th>Actions</th></tr>
               </thead>
               <tbody>
                 {products.map(p => (

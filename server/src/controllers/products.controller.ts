@@ -29,7 +29,7 @@ async function generateUniqueSlug(name: string, excludeId?: string): Promise<str
 // GET /api/products
 export async function listPublishedProducts(req: Request, res: Response): Promise<void> {
   const pagination = parsePagination(req.query as Record<string, unknown>);
-  const { category, search, featured } = req.query as Record<string, string>;
+  const { category, search, featured, minPrice, maxPrice, sort } = req.query as Record<string, string>;
 
   const where: Prisma.ProductWhereInput = {
     status: 'PUBLISHED',
@@ -44,12 +44,28 @@ export async function listPublishedProducts(req: Request, res: Response): Promis
     ];
   }
 
+  const minimum = Number(minPrice);
+  const maximum = Number(maxPrice);
+  if (Number.isFinite(minimum) || Number.isFinite(maximum)) {
+    where.price = {
+      ...(Number.isFinite(minimum) ? { gte: minimum } : {}),
+      ...(Number.isFinite(maximum) ? { lte: maximum } : {}),
+    };
+  }
+
+  const orderBy: Prisma.ProductOrderByWithRelationInput[] =
+    sort === 'price-asc' ? [{ price: 'asc' }, { name: 'asc' }]
+      : sort === 'price-desc' ? [{ price: 'desc' }, { name: 'asc' }]
+      : sort === 'name' ? [{ name: 'asc' }]
+      : sort === 'newest' ? [{ createdAt: 'desc' }]
+      : [{ displayOrder: 'asc' }, { createdAt: 'desc' }];
+
   const [total, products] = await Promise.all([
     prisma.product.count({ where }),
     prisma.product.findMany({
       where,
       include: { category: true },
-      orderBy: [{ displayOrder: 'asc' }, { createdAt: 'desc' }],
+      orderBy,
       skip: pagination.skip,
       take: pagination.limit,
     }),
@@ -63,6 +79,11 @@ export async function getPublicProductCategories(_req: Request, res: Response): 
   const categories = await prisma.productCategory.findMany({
     where: { isActive: true },
     orderBy: { displayOrder: 'asc' },
+    include: {
+      _count: {
+        select: { products: { where: { status: 'PUBLISHED', isAvailable: true } } },
+      },
+    },
   });
   res.status(200).json(successResponse(categories));
 }

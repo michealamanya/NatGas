@@ -74,13 +74,13 @@ export default function PublicLayout() {
 
   useEffect(() => {
     api<Record<string, unknown>>('/settings/public')
-      .then((r) =>
-        setSocial(
-          Object.fromEntries(
-            Object.entries(r.data ?? {}).map(([k, v]) => [k, String(v ?? '')]),
-          ),
-        ),
-      )
+      .then((r) => {
+        const values = Object.fromEntries(
+          Object.entries(r.data ?? {}).map(([k, v]) => [k, String(v ?? '')]),
+        );
+        if (values.site_font) document.documentElement.style.setProperty('--site-font', `'${values.site_font}', system-ui, sans-serif`);
+        setSocial(values);
+      })
       .catch(() => undefined);
   }, []);
 
@@ -137,16 +137,7 @@ export default function PublicLayout() {
           <NavLink to="/">Home</NavLink>
           <NavLink to="/about">About Us</NavLink>
 
-          <NavDropdown label="Products" icon={Package}>
-            <Link to="/products">All Products</Link>
-            <div className="dropdown-divider" />
-            <Link to="/products?category=lpg-cylinders">LPG Cylinders</Link>
-            <Link to="/products?category=accessories">Accessories &amp; Equipment</Link>
-            <Link to="/products?category=commercial">Commercial</Link>
-            <Link to="/products?category=industrial">Industrial</Link>
-            <div className="dropdown-divider" />
-            <Link to="/products?featured=true">Featured products</Link>
-          </NavDropdown>
+          <NavLink to="/products"><Package size={13} /> Products</NavLink>
 
           <NavLink to="/services"><Shield size={13} /> Services</NavLink>
 
@@ -186,6 +177,21 @@ export default function PublicLayout() {
           <span className="footer-strip-copy">
             &copy; {new Date().getFullYear()} Natgas Uganda Limited. All rights reserved.
           </span>
+
+          <div className="footer-strip-quick" aria-label="Footer navigation">
+            <Link to="/about">About</Link>
+            <Link to="/services">Services</Link>
+            <Link to="/products">Shop</Link>
+            <Link to="/contact">Contact</Link>
+            <Link to="/why-choose">Why NATGAS</Link>
+            <Link to="/how-to-order">How to order</Link>
+            {cartCount > 0 && <>
+              <span className="footer-strip-divider" />
+              <Link to="/account">My account</Link>
+              <Link to="/account">My orders</Link>
+              <Link to="/order">Cart ({cartCount})</Link>
+            </>}
+          </div>
 
           <div className="footer-strip-links">
             {socialLinks.map(({ key, icon: SocialIcon, label }) => (

@@ -22,7 +22,6 @@ export default function Home() {
   const [experience, setExperience] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    api<ProductCategory[]>('/products/categories').then(r => setCategories(r.data ?? [])).catch(() => undefined);
     api<NewsArticle[]>('/news?limit=3').then(r => setNews(r.data ?? [])).catch(() => undefined);
     api<Job[]>('/jobs?limit=3').then(r => setJobs(r.data ?? [])).catch(() => undefined);
     api<Location[]>('/locations').then(r => setNetworkPoints(r.data ?? [])).catch(() => undefined);
@@ -38,7 +37,6 @@ export default function Home() {
     api<Product[]>(`/products?${q}`).then(r => setProducts(r.data ?? [])).catch(() => undefined);
   }, [activeTab]);
   useRealtimeRefresh(() => {
-    api<ProductCategory[]>('/products/categories').then(r => setCategories(r.data ?? [])).catch(() => undefined);
     api<NewsArticle[]>('/news?limit=3').then(r => setNews(r.data ?? [])).catch(() => undefined);
     api<Job[]>('/jobs?limit=3').then(r => setJobs(r.data ?? [])).catch(() => undefined);
     api<Location[]>('/locations').then(r => setNetworkPoints(r.data ?? [])).catch(() => undefined);
@@ -116,6 +114,7 @@ export default function Home() {
       <section className="section engineering-focus-section"><div className="wrap"><div className="section-head engineering-heading"><div><span className="chip-sm">GAS ENGINEERING</span><h2>Engineering LPG systems from concept to safe operation.</h2><p>We combine design capability, field execution and long-term technical support for homes, institutions, hospitality and industry.</p></div><Link className="btn btn-dark" to="/services">Our engineering services <ArrowRight size={14}/></Link></div><div className="engineering-grid">{[{icon:HardHat,title:'Design & shop drawings',text:'Smart, scalable LPG designs, reticulated systems and site assessments.'},{icon:Wrench,title:'Installation & commissioning',text:'Tanks, pipelines, burners and complete LPG systems installed by verified engineers.'},{icon:Search,title:'Inspection, NDT & maintenance',text:'Testing, compliance checks, repairs and preventive care across the system lifecycle.'}].map(({icon:Icon,title,text})=><article key={title}><Icon size={25}/><h3>{title}</h3><p>{text}</p><Link to="/services">Learn more <ArrowRight size={13}/></Link></article>)}</div></div></section>
 
       {/* ── Product category tabs + grid ── */}
+      {false && <>
       <div className="cat-tabs-bar">
         <div className="cat-tabs">
           <button className={`cat-tab${activeTab === '' ? ' active' : ''}`} onClick={() => setActiveTab('')}>
@@ -157,7 +156,7 @@ export default function Home() {
                       </div>
                     </div>
                     <div className="pcard-body">
-                      <span className="pcard-cat">LPG PRODUCT</span>
+                      <span className="pcard-cat">NATGAS EQUIPMENT</span>
                       <h3 className="pcard-name">{s} {s.includes('kg') ? 'LPG Cylinder' : ''}</h3>
                       <p className="pcard-desc">Certified product from Natgas Uganda.</p>
                       <div className="pcard-footer">
@@ -177,13 +176,14 @@ export default function Home() {
           </div>
         </div>
       </section>
+      </>}
 
       <section className="section distribution-section"><div className="wrap distribution-grid"><div className="distribution-map-card"><span className="chip-sm">DISTRIBUTION FOOTPRINT</span><h2>Engineering-led, backed by dependable LPG supply.</h2><p>Our distribution network supports engineering clients and households with refill access, equipment and responsive delivery coordination.</p><div className="uganda-footprint" aria-label="Uganda distribution footprint illustration"><span className="footprint-line line-one"/><span className="footprint-line line-two"/><span className="footprint-pin pin-central"><MapPin size={18}/><b>Central</b></span><span className="footprint-pin pin-east"><MapPin size={18}/><b>Eastern</b></span><span className="footprint-pin pin-west"><MapPin size={18}/><b>Western</b></span><span className="footprint-pin pin-north"><MapPin size={18}/><b>Northern</b></span></div><Link className="btn btn-primary" to="/locations">Find a refill point or contact <ArrowRight size={14}/></Link></div><div className="distribution-points"><div><span className="chip-sm">NETWORK CONTACTS</span><h2>Nearby support when you need it.</h2></div>{networkPoints.slice(0,3).map(point=><article key={point.id}><MapPin size={18}/><div><h3>{point.name}</h3><p>{point.address}, {point.district}</p>{point.phone && <a href={`tel:${point.phone}`}>{point.phone}</a>}</div><a className="distribution-directions" href={point.latitude && point.longitude ? `https://www.google.com/maps?q=${point.latitude},${point.longitude}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${point.name}, ${point.address}, Uganda`)}`} target="_blank" rel="noreferrer">Directions</a></article>)}{!networkPoints.length && <article><MapPin size={18}/><div><h3>Kawuku, Entebbe Road</h3><p>Contact NATGAS for nearby refill support and distribution enquiries.</p><a href="tel:+256740938040">+256 740 938 040</a></div></article>}<Link className="link-all" to="/locations">View network contacts <ChevronRight size={14}/></Link></div></div></section>
 
       {/* ── Services ── */}
-      <section className="section home-value-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">WHY CHOOSE NATGAS</span><h2>Energy delivered with safety and care.</h2></div></div><div className="home-value-grid">{[{icon:ShieldCheck,title:'Safety first',text:'Certified cylinders, safe handling guidance and trained support.'},{icon:Truck,title:'Reliable supply',text:'Dependable LPG availability and convenient delivery coordination.'},{icon:CheckCircle2,title:'Genuine cylinders',text:'Quality-checked NATGAS products and trusted accessories.'},{icon:MessageCircle,title:'Customer support',text:'Helpful assistance for homes, dealers and commercial customers.'}].map(({icon:Icon,title,text}) => <article key={title}><Icon size={24}/><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>
+      {false && <><section id="why-choose" className="section home-value-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">WHY CHOOSE NATGAS</span><h2>Energy delivered with safety and care.</h2></div></div><div className="home-value-grid">{[{icon:ShieldCheck,title:'Safety first',text:'Certified cylinders, safe handling guidance and trained support.'},{icon:Truck,title:'Reliable supply',text:'Dependable LPG availability and convenient delivery coordination.'},{icon:CheckCircle2,title:'Genuine cylinders',text:'Quality-checked NATGAS products and trusted accessories.'},{icon:MessageCircle,title:'Customer support',text:'Helpful assistance for homes, dealers and commercial customers.'}].map(({icon:Icon,title,text}) => <article key={title}><Icon size={24}/><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>
 
-      <section className="section home-order-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">HOW TO ORDER</span><h2>Gas delivered in four clear steps.</h2></div><Link className="btn btn-dark" to="/products">Order Gas <ArrowRight size={14}/></Link></div><div className="order-steps">{[{icon:Package,title:'Select product',text:'Choose your cylinder or refill size.'},{icon:MapPin,title:'Share location',text:'Tell us your district and delivery point.'},{icon:CreditCard,title:'Confirm payment',text:'Confirm the agreed payment method.'},{icon:Truck,title:'Receive delivery',text:'Get your LPG supply safely and conveniently.'}].map(({icon:Icon,title,text},index) => <article key={title}><span>{index + 1}</span><Icon size={23}/><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>
+      <section id="how-to-order" className="section home-order-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">HOW TO ORDER</span><h2>Gas delivered in four clear steps.</h2></div><Link className="btn btn-dark" to="/products">Order Gas <ArrowRight size={14}/></Link></div><div className="order-steps">{[{icon:Package,title:'Select product',text:'Choose your cylinder or refill size.'},{icon:MapPin,title:'Share location',text:'Tell us your district and delivery point.'},{icon:CreditCard,title:'Confirm payment',text:'Confirm the agreed payment method.'},{icon:Truck,title:'Receive delivery',text:'Get your LPG supply safely and conveniently.'}].map(({icon:Icon,title,text},index) => <article key={title}><span>{index + 1}</span><Icon size={23}/><h3>{title}</h3><p>{text}</p></article>)}</div></div></section></>}
 
       {/* ── Latest news ── */}
       <section className="section home-review-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">CUSTOMER FEEDBACK</span><h2>Trusted by homes and businesses.</h2></div></div><div className="review-grid"><blockquote>“The delivery coordination was clear, and the safety guidance was genuinely useful.”<footer>Household customer, Kampala</footer></blockquote><blockquote>“NATGAS helped us plan a more reliable LPG supply for our kitchen operations.”<footer>Commercial customer, Entebbe</footer></blockquote><blockquote>“Professional, responsive and careful about every installation detail.”<footer>Business customer, Central Region</footer></blockquote></div>{/* Placeholder testimonials — replace with approved customer quotes via the CMS */}</div></section>
@@ -255,7 +255,7 @@ export function ProductCard({ p, idx }: { p: Product; idx: number }) {
           ? <img src={p.imageUrl} alt={p.name} loading="lazy" />
           : <div className="cyl-placeholder">
               <span className="cyl-ph-brand">NATGAS</span>
-              <span className="cyl-ph-size">{p.cylinderSize ?? 'LPG'}</span>
+              <span className="cyl-ph-size">{p.cylinderSize ?? 'EQUIPMENT'}</span>
             </div>
         }
         {!p.isAvailable && <div className="pcard-badge-out">Out of stock</div>}
@@ -263,7 +263,7 @@ export function ProductCard({ p, idx }: { p: Product; idx: number }) {
       </Link>
       <div className="pcard-body">
         <div className="pcard-topline">
-          <span className="pcard-cat">{p.category?.name ?? 'LPG PRODUCT'}</span>
+          <span className="pcard-cat">{p.category?.name ?? 'NATGAS EQUIPMENT'}</span>
           {p.cylinderSize && <span className="pcard-size">{p.cylinderSize}</span>}
         </div>
         <Link to={`/products/${p.slug}`} className="pcard-name">{p.name}</Link>

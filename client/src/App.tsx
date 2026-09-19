@@ -23,6 +23,8 @@ const OrderCart   = lazy(() => import('./pages/OrderCart'));
 const CustomerAccount = lazy(() => import('./pages/CustomerAccount'));
 const Media       = lazy(() => import('./pages/Media'));
 const Locations   = lazy(() => import('./pages/Locations'));
+const WhyChoose   = lazy(() => import('./pages/CompanyGuides').then(m => ({ default: m.WhyChoose })));
+const HowToOrder  = lazy(() => import('./pages/CompanyGuides').then(m => ({ default: m.HowToOrder })));
 
 // ── Admin pages (lazy loaded) ─────────────────────────────────────────────────
 const Login          = lazy(() => import('./pages/admin/Login'));
@@ -100,6 +102,8 @@ export default function App() {
           <Route path="services/:slug" element={<ServiceDetail />} />
           <Route path="media"        element={<Media />} />
           <Route path="locations"    element={<Locations />} />
+          <Route path="why-choose"   element={<WhyChoose />} />
+          <Route path="how-to-order" element={<HowToOrder />} />
           <Route path="careers"      element={<Careers />} />
           <Route path="careers/:slug" element={<JobDetail />} />
           <Route path="news"         element={<News />} />

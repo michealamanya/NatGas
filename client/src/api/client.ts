@@ -57,6 +57,7 @@ export interface ProductCategory {
   slug: string;
   description?: string;
   displayOrder: number;
+  _count?: { products: number };
 }
 
 export interface Service {

@@ -1,6 +1,7 @@
 import app from './app.js';
 import { config } from './config/index.js';
 import { prisma } from './database/client.js';
+import { ensureDefaultProductCategories } from './database/default-product-categories.js';
 import { logger } from './utils/logger.js';
 
 const { port, host } = config.server;
@@ -12,6 +13,8 @@ async function startServer(): Promise<void> {
     // Verify database connection
     await prisma.$connect();
     logger.info('Database connection established');
+    await ensureDefaultProductCategories();
+    logger.info('Default product categories are available');
 
     server = app.listen(port, host, () => {
       logger.info(`NATGAS Uganda server running`, {
