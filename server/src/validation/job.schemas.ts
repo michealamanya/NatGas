@@ -23,7 +23,9 @@ export const jobApplicationSchema = z.object({
   email: z.string().email('Invalid email address').toLowerCase(),
   phone: z.string().max(20).optional(),
   coverLetter: z.string().max(3000).optional(),
-  linkedInUrl: z.string().url('Invalid LinkedIn URL').optional().nullable(),
+  // Browsers submit an empty string for an untouched optional URL field.
+  // Normalize it to null so an otherwise valid application is not rejected.
+  linkedInUrl: z.preprocess((value) => value === '' ? null : value, z.string().url('Invalid LinkedIn URL').optional().nullable()),
 });
 
 export const updateApplicationStatusSchema = z.object({

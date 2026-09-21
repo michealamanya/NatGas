@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import multer from 'multer';
+import { config } from '../config/index.js';
 import { contactLimiter } from '../middleware/rateLimit.js';
 import { validate } from '../middleware/validate.js';
 
@@ -37,6 +39,10 @@ import { contactFormSchema } from '../validation/contact.schemas.js';
 import { jobApplicationSchema } from '../validation/job.schemas.js';
 
 const router: Router = Router();
+const applicationUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: config.upload.maxFileSize },
+});
 
 // ==================== Products ====================
 router.get('/products', listPublishedProducts);
@@ -59,7 +65,9 @@ router.get('/news/:slug', getArticleBySlug);
 // ==================== Jobs ====================
 router.get('/jobs', listPublishedJobs);
 router.get('/jobs/:slug', getJobBySlug);
-router.post('/jobs/:id/apply', validate(jobApplicationSchema), applyForJob);
+// Multipart parsing must happen before validation so applicant fields and CV
+// are available to the controller.
+router.post('/jobs/:id/apply', applicationUpload.single('cv'), validate(jobApplicationSchema), applyForJob);
 
 // ==================== Contact ====================
 router.post('/contact', contactLimiter, validate(contactFormSchema), submitContact);

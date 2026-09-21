@@ -11,6 +11,7 @@ export default function AdminJobs() {
   const [editing,  setEditing]  = useState<AdminJob | null>(null);
   const [toast,    setToast]    = useState('');
   const [tab, setTab]           = useState<'jobs' | 'apps'>('jobs');
+  const applicationCount = jobs.reduce((total, job) => total + (job._count?.applications ?? 0), 0);
 
   const notify = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
   const load = () => {
@@ -88,7 +89,7 @@ export default function AdminJobs() {
           <Briefcase size={13} /> Vacancies
         </button>
         <button className={`jobs-tab ${tab==='apps' ? 'active' : ''}`} onClick={() => setTab('apps')}>
-          <Users size={13} /> Applications
+          <Users size={13} /> Applications {applicationCount > 0 && <b className="jobs-tab-count">{applicationCount}</b>}
         </button>
       </div>
 

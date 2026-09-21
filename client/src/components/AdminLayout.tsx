@@ -3,6 +3,7 @@ import {
   Image, LogOut, MapPin, MessageSquare, Package, Settings, Users,
 } from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { api, User } from '../api/client';
 
 const NAV = [
@@ -23,6 +24,16 @@ const NAV = [
 
 export default function AdminLayout({ user, onLogout }: { user: User; onLogout?: () => void }) {
   const navigate = useNavigate();
+  const [newApplications, setNewApplications] = useState(0);
+
+  useEffect(() => {
+    const refreshApplications = () => api<{ counts?: { applications?: { new?: number } } }>('/admin/dashboard')
+      .then(result => setNewApplications(result.data?.counts?.applications?.new ?? 0))
+      .catch(() => undefined);
+    void refreshApplications();
+    const timer = window.setInterval(refreshApplications, 30000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const logout = async () => {
     try { await api('/auth/logout', { method: 'POST' }); } catch { /**/ }
@@ -53,7 +64,7 @@ export default function AdminLayout({ user, onLogout }: { user: User; onLogout?:
               to={to}
               className={({ isActive }) => `anav-link${isActive ? ' active' : ''}`}
             >
-              <Icon size={15} /> {label}
+              <Icon size={15} /> <span>{label}</span>{label === 'Jobs' && newApplications > 0 && <b className="admin-nav-badge" aria-label={`${newApplications} new applications`}>{newApplications > 99 ? '99+' : newApplications}</b>}
             </NavLink>
           ))}
 
