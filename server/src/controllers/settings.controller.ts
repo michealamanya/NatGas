@@ -29,6 +29,7 @@ const PUBLIC_SETTING_KEYS = [
   'home_announcement_media_url',
   'site_font',
   'partners_json',
+  'feedback_json',
 ];
 
 const RECOVERY_DEFAULTS: Record<string, string> = {
@@ -42,6 +43,7 @@ const RECOVERY_DEFAULTS: Record<string, string> = {
   home_announcement_media_url: '',
   site_font: 'Inter',
   partners_json: '[]',
+  feedback_json: '[]',
 };
 
 function parseSettingValue(value: string | null, type: string): unknown {

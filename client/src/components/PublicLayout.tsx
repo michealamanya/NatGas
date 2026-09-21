@@ -73,7 +73,7 @@ export default function PublicLayout() {
   }, []);
 
   useEffect(() => {
-    api<Record<string, unknown>>('/settings/public')
+    const refreshSettings = () => api<Record<string, unknown>>('/settings/public')
       .then((r) => {
         const values = Object.fromEntries(
           Object.entries(r.data ?? {}).map(([k, v]) => [k, String(v ?? '')]),
@@ -82,6 +82,9 @@ export default function PublicLayout() {
         setSocial(values);
       })
       .catch(() => undefined);
+    void refreshSettings();
+    window.addEventListener('natgas-settings-change', refreshSettings);
+    return () => window.removeEventListener('natgas-settings-change', refreshSettings);
   }, []);
 
   const socialLinks = [

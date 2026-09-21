@@ -46,6 +46,15 @@ export default function Home() {
 
   const FALLBACK = ['3kg','6kg','12.5kg','38kg','Flanges'];
   const heroMedia = experience.home_hero_media_url;
+  let feedback: Array<{ quote: string; author: string; role: string }> = [];
+  try {
+    const raw = experience.feedback_json;
+    feedback = raw === undefined ? [
+      { quote: 'The delivery coordination was clear, and the safety guidance was genuinely useful.', author: 'Household customer', role: 'Kampala' },
+      { quote: 'NATGAS helped us plan a more reliable LPG supply for our kitchen operations.', author: 'Commercial customer', role: 'Entebbe' },
+      { quote: 'Professional, responsive and careful about every installation detail.', author: 'Business customer', role: 'Central Region' },
+    ] : JSON.parse(raw || '[]');
+  } catch { feedback = []; }
   const heroIsVideo = experience.home_hero_media_type === 'video';
   const heroStyle = !heroIsVideo && heroMedia ? { '--hero-media': `url("${heroMedia}")`, '--hero-overlay': `${Number(experience.home_hero_overlay || 70) / 100}` } as CSSProperties : undefined;
   useEffect(() => { if (experience.site_font) document.documentElement.style.setProperty('--site-font', `'${experience.site_font}', system-ui, sans-serif`); }, [experience.site_font]);
@@ -186,7 +195,7 @@ export default function Home() {
       <section id="how-to-order" className="section home-order-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">HOW TO ORDER</span><h2>Gas delivered in four clear steps.</h2></div><Link className="btn btn-dark" to="/products">Order Gas <ArrowRight size={14}/></Link></div><div className="order-steps">{[{icon:Package,title:'Select product',text:'Choose your cylinder or refill size.'},{icon:MapPin,title:'Share location',text:'Tell us your district and delivery point.'},{icon:CreditCard,title:'Confirm payment',text:'Confirm the agreed payment method.'},{icon:Truck,title:'Receive delivery',text:'Get your LPG supply safely and conveniently.'}].map(({icon:Icon,title,text},index) => <article key={title}><span>{index + 1}</span><Icon size={23}/><h3>{title}</h3><p>{text}</p></article>)}</div></div></section></>}
 
       {/* ── Latest news ── */}
-      <section className="section home-review-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">CUSTOMER FEEDBACK</span><h2>Trusted by homes and businesses.</h2></div></div><div className="review-grid"><blockquote>“The delivery coordination was clear, and the safety guidance was genuinely useful.”<footer>Household customer, Kampala</footer></blockquote><blockquote>“NATGAS helped us plan a more reliable LPG supply for our kitchen operations.”<footer>Commercial customer, Entebbe</footer></blockquote><blockquote>“Professional, responsive and careful about every installation detail.”<footer>Business customer, Central Region</footer></blockquote></div>{/* Placeholder testimonials — replace with approved customer quotes via the CMS */}</div></section>
+      {feedback.length > 0 && <section className="section home-review-section"><div className="wrap"><div className="section-head"><div><span className="chip-sm">CUSTOMER FEEDBACK</span><h2>Trusted by homes and businesses.</h2></div></div><div className="review-grid">{feedback.map((item, index) => <blockquote key={`${item.author}-${index}`}>“{item.quote}”<footer>{item.author}{item.role ? `, ${item.role}` : ''}</footer></blockquote>)}</div></div></section>}
 
       <section className="business-cta"><div className="wrap"><div><span className="chip-sm">PARTNER WITH NATGAS</span><h2>Grow your business with dependable LPG supply.</h2><p>Become an authorised dealer or request a commercial and bulk-LPG quotation.</p></div><div className="cta-btns"><Link className="btn btn-primary" to="/contact">Become a dealer</Link><Link className="btn btn-wht" to="/contact">Request a business quote</Link></div></div></section>
 

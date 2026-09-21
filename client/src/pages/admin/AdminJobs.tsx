@@ -225,6 +225,8 @@ export default function AdminJobs() {
 function ApplicationsTab() {
   const [apps, setApps]     = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<any | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     api<any[]>('/admin/applications?limit=100')
@@ -235,6 +237,25 @@ function ApplicationsTab() {
   const STATUS_COLORS: Record<string,string> = {
     NEW:'badge-new', REVIEWING:'badge-reviewing', SHORTLISTED:'badge-published',
     INTERVIEW:'badge-new', REJECTED:'badge-archived', HIRED:'badge-published',
+  };
+
+  const openApplication = async (application: any) => {
+    try {
+      const result = await api<any>(`/admin/applications/${application.id}`);
+      setSelected(result.data ?? application);
+    } catch {
+      setSelected(application);
+    }
+  };
+
+  const updateStatus = async (status: string, notes: string) => {
+    if (!selected) return;
+    setSaving(true);
+    try {
+      await api(`/admin/applications/${selected.id}/status`, { method: 'PUT', body: JSON.stringify({ status, notes }) });
+      setApps(current => current.map(application => application.id === selected.id ? { ...application, status, notes } : application));
+      setSelected((current: any) => current ? { ...current, status, notes } : current);
+    } finally { setSaving(false); }
   };
 
   return (
@@ -248,12 +269,12 @@ function ApplicationsTab() {
             <thead><tr><th>Applicant</th><th>Job</th><th>Applied</th><th>Status</th><th>CV</th></tr></thead>
             <tbody>
               {apps.map(a => (
-                <tr key={a.id}>
-                  <td><b>{a.fullName}</b><small>{a.email}</small></td>
+                <tr key={a.id} className="clickable-row" onClick={() => void openApplication(a)}>
+                  <td><button className="applicant-link" type="button" onClick={() => void openApplication(a)}><b>{a.fullName}</b><small>{a.email}</small></button></td>
                   <td>{a.job?.title ?? '—'}</td>
                   <td>{new Date(a.appliedAt).toLocaleDateString()}</td>
                   <td><span className={`badge ${STATUS_COLORS[a.status] ?? 'badge-draft'}`}>{a.status}</span></td>
-                  <td>{a.cvUrl ? <a href={a.cvUrl} target="_blank" rel="noreferrer" className="btn-link" style={{ fontSize:13 }}>View CV</a> : '—'}</td>
+                  <td>{a.cvUrl ? <a href={a.cvUrl} target="_blank" rel="noreferrer" className="btn-link" style={{ fontSize:13 }} onClick={event => event.stopPropagation()}>View CV</a> : '—'}</td>
                 </tr>
               ))}
               {apps.length === 0 && (
@@ -263,6 +284,20 @@ function ApplicationsTab() {
           </table>
         </div>
       )}
+      {selected && <ApplicationReview application={selected} saving={saving} onClose={() => setSelected(null)} onSave={updateStatus} />}
     </div>
   );
+}
+
+function ApplicationReview({ application, saving, onClose, onSave }: { application: any; saving: boolean; onClose: () => void; onSave: (status: string, notes: string) => Promise<void> }) {
+  const [status, setStatus] = useState(application.status ?? 'NEW');
+  const [notes, setNotes] = useState(application.notes ?? '');
+  return <div className="admin-modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
+    <section className="admin-modal application-review" role="dialog" aria-modal="true" aria-labelledby="application-review-title">
+      <header className="admin-modal-head"><div><span className="chip-sm">APPLICATION REVIEW</span><h2 id="application-review-title">{application.fullName}</h2><p>{application.job?.title ?? 'Job application'}</p></div><button className="icon-btn" type="button" onClick={onClose} aria-label="Close review"><X size={18}/></button></header>
+      <div className="application-review-grid"><div><h3>Candidate details</h3><dl className="review-details"><dt>Email</dt><dd><a href={`mailto:${application.email}`}>{application.email}</a></dd><dt>Phone</dt><dd>{application.phone ? <a href={`tel:${application.phone}`}>{application.phone}</a> : 'Not provided'}</dd><dt>LinkedIn</dt><dd>{application.linkedInUrl ? <a href={application.linkedInUrl} target="_blank" rel="noreferrer">Open profile</a> : 'Not provided'}</dd><dt>Applied</dt><dd>{application.appliedAt ? new Date(application.appliedAt).toLocaleString('en-UG') : '—'}</dd></dl></div><div><h3>Documents</h3>{application.cvUrl ? <a className="btn btn-outline" href={application.cvUrl} target="_blank" rel="noreferrer"><Briefcase size={15}/> Open CV / Resume</a> : <p className="admin-help">No CV attached.</p>}</div></div>
+      <div className="application-cover-letter"><h3>Cover letter</h3><p>{application.coverLetter || 'No cover letter provided.'}</p></div>
+      <div className="application-review-actions"><label>Status<select value={status} onChange={event => setStatus(event.target.value)}><option value="NEW">New</option><option value="REVIEWING">Reviewing</option><option value="SHORTLISTED">Shortlisted</option><option value="INTERVIEW">Interview</option><option value="REJECTED">Rejected</option><option value="HIRED">Hired</option></select></label><label>Internal notes<textarea rows={3} value={notes} onChange={event => setNotes(event.target.value)} placeholder="Add a private hiring note..." /></label><div className="admin-form-actions"><button type="button" className="btn btn-outline" onClick={onClose}>Close</button><button type="button" className="btn btn-primary" disabled={saving} onClick={() => void onSave(status, notes)}>{saving ? 'Saving...' : 'Save review'}</button></div></div>
+    </section>
+  </div>;
 }
