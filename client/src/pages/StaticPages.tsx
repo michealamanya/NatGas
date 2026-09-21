@@ -8,6 +8,19 @@ import { api, Service as ManagedService } from '../api/client';
 
 /* ─── About ─────────────────────────────────────────────────────────────── */
 export function About() {
+  const [partners, setPartners] = useState<Array<{ name: string; logoUrl?: string; websiteUrl?: string }>>([]);
+  useEffect(() => {
+    api<Record<string, unknown>>('/settings/public').then(result => {
+      try {
+        const raw = result.data?.partners_json;
+        const parsed = raw === undefined ? [
+          { name: 'TotalEnergies' }, { name: 'STABEX International' }, { name: 'Shell' },
+          { name: 'Serena Hotels' }, { name: 'Royal Van Zanten' },
+        ] : JSON.parse(String(raw));
+        if (Array.isArray(parsed)) setPartners(parsed.filter(partner => partner && partner.name && partner.isActive !== false));
+      } catch { setPartners([]); }
+    }).catch(() => undefined);
+  }, []);
   return (
     <>
       <div className="page-hero">
@@ -98,10 +111,13 @@ export function About() {
             <h2 id="partners-title">Working with industry leaders.</h2>
             <p>Our solutions are supported by trusted product, engineering and hospitality partners.</p>
           </div>
-          <div className="partners-grid" aria-label="Selected partners">
-            {['TotalEnergies', 'STABEX International', 'Shell', 'Serena Hotels', 'Royal Van Zanten'].map(partner => (
-              <div className="partner-mark" key={partner}>{partner}</div>
-            ))}
+          <div className="partners-marquee" aria-label="Selected partners">
+            <div className="partners-track">
+              {[...partners, ...partners].map((partner, index) => {
+                const mark = <div className="partner-mark">{partner.logoUrl ? <img src={partner.logoUrl} alt={partner.name} loading="lazy" /> : partner.name}</div>;
+                return partner.websiteUrl ? <a href={partner.websiteUrl} target="_blank" rel="noreferrer" key={`${partner.name}-${index}`}>{mark}</a> : <div key={`${partner.name}-${index}`}>{mark}</div>;
+              })}
+            </div>
           </div>
         </div>
       </section>

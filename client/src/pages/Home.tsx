@@ -53,7 +53,7 @@ export default function Home() {
   return (
     <>
       {/* ── Hero banner ── */}
-      {experience.home_announcement_enabled === 'true' && experience.home_announcement_text && <Link className="home-announcement" to={experience.home_announcement_link || '/products'}><b>{experience.home_announcement_label || 'New'}</b><span>{experience.home_announcement_text}</span><ArrowRight size={14}/></Link>}
+      {experience.home_announcement_enabled === 'true' && experience.home_announcement_text && <Link className="home-announcement" style={experience.home_announcement_media_url ? { backgroundImage: `linear-gradient(90deg, rgba(7,52,41,.9), rgba(7,52,41,.62)), url("${experience.home_announcement_media_url}")` } : undefined} to={experience.home_announcement_link || '/products'}><b>{experience.home_announcement_label || 'New'}</b><span>{experience.home_announcement_text}</span><ArrowRight size={14}/></Link>}
       <div className={`hero-banner${heroIsVideo && heroMedia ? ' hero-video' : ''}`} style={heroStyle}>
         {heroIsVideo && heroMedia && <video className="hero-video-media" src={heroMedia} autoPlay muted loop playsInline />}
         <div className="hero-inner">

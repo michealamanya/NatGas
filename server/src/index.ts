@@ -29,6 +29,9 @@ async function startServer(): Promise<void> {
     // Keep-alive timeout slightly higher than ALB/nginx default
     server.keepAliveTimeout = 65000;
     server.headersTimeout = 66000;
+    // Uploads and large catalogue publishes should not be cut off by Node's
+    // short request window while the reverse proxy is still connected.
+    server.requestTimeout = 120000;
   } catch (err) {
     logger.error('Failed to start server', { error: err });
     process.exit(1);

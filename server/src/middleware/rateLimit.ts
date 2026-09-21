@@ -12,13 +12,13 @@ const standardHandler = (message: string) =>
   });
 
 /**
- * generalLimiter - 100 requests per 15 minutes for general API use.
+ * generalLimiter - generous catalogue/admin headroom while retaining abuse protection.
  */
 export const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: config.rateLimit.windowMs,
   // Development tools and the Vite client make many harmless requests. Keep
   // production protection while preventing local catalogue browsing lockouts.
-  max: config.isDevelopment ? 5000 : 100,
+  max: config.isDevelopment ? 5000 : config.rateLimit.maxRequests,
   skip: (req) => req.path.startsWith('/uploads'),
   standardHeaders: true,
   legacyHeaders: false,

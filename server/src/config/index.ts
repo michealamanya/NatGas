@@ -107,7 +107,9 @@ export const config = {
 
   rateLimit: {
     windowMs: parseInt(optionalEnv('RATE_LIMIT_WINDOW_MS', '900000'), 10), // 15 min
-    maxRequests: parseInt(optionalEnv('RATE_LIMIT_MAX', '100'), 10),
+    // The admin console can publish several related records in one session;
+    // keep a useful production guard without locking out normal CMS work.
+    maxRequests: parseInt(optionalEnv('RATE_LIMIT_MAX', '300'), 10),
     loginWindowMs: parseInt(optionalEnv('LOGIN_RATE_LIMIT_WINDOW_MS', '900000'), 10),
     loginMaxRequests: parseInt(optionalEnv('LOGIN_RATE_LIMIT_MAX', '10'), 10),
   },

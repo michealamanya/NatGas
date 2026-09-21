@@ -162,7 +162,7 @@ h1,h2,h3,h4,h5,h6 { font-family:var(--site-font, 'Inter', system-ui, sans-serif)
   display: flex; align-items: center;
 }
 .hero-video { background:var(--green); isolation:isolate; }.hero-video-media { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:-2; }.hero-video::after { content:''; position:absolute; inset:0; background:rgba(21,67,14,.48); z-index:-1; }
-.home-announcement { min-height:38px; display:flex; align-items:center; justify-content:center; gap:10px; padding:8px 20px; background:var(--gold); color:#1a0e00; font-size:13px; font-weight:600; text-decoration:none; }.home-announcement b { text-transform:uppercase; letter-spacing:.7px; font-size:11px; }
+.home-announcement { min-height:76px; display:flex; align-items:center; justify-content:center; gap:10px; padding:14px 20px; background-color:var(--gold); background-position:center; background-size:cover; color:#fff; font-size:14px; font-weight:600; text-decoration:none; transition:filter .2s ease; }.home-announcement:hover { filter:brightness(1.08); }.home-announcement b { text-transform:uppercase; letter-spacing:.7px; font-size:11px; }
 .hero-banner::before {
   content:''; position:absolute; inset:0;
   background:linear-gradient(180deg,rgba(35,111,24,.08),rgba(0,0,0,.2));
@@ -683,8 +683,20 @@ h1,h2,h3,h4,h5,h6 { font-family:var(--site-font, 'Inter', system-ui, sans-serif)
 .partners-heading h2 { margin-top:9px; font-family:'Playfair Display',Georgia,serif; font-size:clamp(24px,3vw,34px); }
 .partners-heading p { margin-top:8px; color:var(--muted); font-size:13px; }
 .partners-grid { display:grid; grid-template-columns:repeat(5,1fr); align-items:stretch; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+.partners-marquee { overflow:hidden; border:1px solid var(--border); border-radius:10px; background:rgba(255,255,255,.72); }
+.partners-track { display:flex; width:max-content; animation:partners-scroll 28s linear infinite; }
+.partners-track:hover { animation-play-state:paused; }
+.partners-track > a, .partners-track > div { flex:0 0 clamp(180px,20vw,260px); border-right:1px solid var(--border); text-decoration:none; }
+@keyframes partners-scroll { from { transform:translateX(0); } to { transform:translateX(-50%); } }
 .partner-mark { min-height:94px; display:grid; place-items:center; padding:16px; border-right:1px solid var(--border); color:var(--green); font-family:'Playfair Display',Georgia,serif; font-size:clamp(15px,1.6vw,21px); font-weight:700; text-align:center; }
+.partner-mark img { max-width:150px; max-height:48px; width:auto; height:auto; object-fit:contain; filter:saturate(.9); }
 .partner-mark:last-child { border-right:0; }
+.admin-section-row { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:14px; }
+.partner-admin-row { display:grid; grid-template-columns:1.2fr 1fr auto 42px; gap:10px; align-items:center; padding:10px 0; border-top:1px solid var(--border); }
+.upload-inline { display:inline-flex; align-items:center; gap:6px; white-space:nowrap; cursor:pointer; }
+.upload-inline input { display:none; }
+.icon-btn { display:grid; place-items:center; width:36px; height:36px; border:1px solid var(--border); border-radius:7px; background:transparent; color:var(--muted); cursor:pointer; }
+.icon-btn:hover { color:var(--orange); border-color:var(--orange); }
 
 /* Unified professional card treatment: quiet, generous surfaces that keep
    image-led content and long-form LPG information easy to scan. */
@@ -814,6 +826,7 @@ h1,h2,h3,h4,h5,h6 { font-family:var(--site-font, 'Inter', system-ui, sans-serif)
   .jobs-page-header { flex-direction:column; }
   .jobs-page-header .btn { width:100%; justify-content:center; }
   .partners-grid { grid-template-columns:1fr; }
+  .partner-admin-row { grid-template-columns:1fr; }
   .partner-mark, .partner-mark:nth-child(3) { border-right:0; border-bottom:1px solid var(--border); min-height:68px; }
   .partner-mark:last-child { border-bottom:0; }
   .stat-cards { grid-template-columns:1fr 1fr; }
