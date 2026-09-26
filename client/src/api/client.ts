@@ -161,6 +161,7 @@ export interface User {
   status: string;
   lastLoginAt?: string;
   phone?: string;
+  avatarUrl?: string | null;
 }
 
 export interface DashboardStats {

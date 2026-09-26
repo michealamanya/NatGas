@@ -152,6 +152,15 @@ export async function updateProfile(req: AuthenticatedRequest, res: Response): P
   res.status(200).json(successResponse(toSafeUser(user), 'Account details updated.'));
 }
 
+// PUT /api/auth/profile/avatar - any authenticated staff or customer may set
+// their own uploaded profile image; no elevated user-management permission is
+// required for this self-service action.
+export async function updateProfileAvatar(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const { avatarUrl } = req.body as { avatarUrl: string | null };
+  const user = await prisma.user.update({ where: { id: req.user!.id }, data: { avatarUrl } });
+  res.status(200).json(successResponse(toSafeUser(user), 'Profile photo updated.'));
+}
+
 // POST /api/auth/forgot-password
 export async function forgotPassword(req: Request, res: Response): Promise<void> {
   const { email } = req.body as { email: string };

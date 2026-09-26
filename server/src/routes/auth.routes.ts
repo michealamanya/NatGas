@@ -11,6 +11,7 @@ import {
   changePassword,
   registerCustomer,
   updateProfile,
+  updateProfileAvatar,
 } from '../controllers/auth.controller.js';
 import {
   loginSchema,
@@ -19,6 +20,7 @@ import {
   changePasswordSchema,
   customerRegisterSchema,
   customerProfileSchema,
+  profileAvatarSchema,
 } from '../validation/auth.schemas.js';
 
 const router: Router = Router();
@@ -33,6 +35,7 @@ router.post('/logout', logout);
 // GET /api/auth/me - requires auth
 router.get('/me', requireAuth, getMe);
 router.put('/profile', requireAuth, validate(customerProfileSchema), updateProfile);
+router.put('/profile/avatar', requireAuth, validate(profileAvatarSchema), updateProfileAvatar);
 
 // POST /api/auth/forgot-password
 router.post('/forgot-password', authLimiter, validate(forgotPasswordSchema), forgotPassword);

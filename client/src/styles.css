@@ -733,6 +733,10 @@ body {
 .partner-mark:last-child { border-right:0; }
 .admin-section-row { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:14px; }
 .admin-nav-badge { margin-left:auto; min-width:20px; height:20px; display:inline-grid; place-items:center; padding:0 5px; border-radius:999px; background:var(--orange); color:#1a0e00; font-size:11px; line-height:1; }
+.admin-profile-photo { width:38px; height:38px; flex:none; display:grid; place-items:center; overflow:hidden; padding:0; border:2px solid var(--gold); border-radius:50%; background:var(--gold); color:#1a0e00; font-size:12px; font-weight:800; cursor:pointer; transition:transform .2s ease,box-shadow .2s ease; }
+.admin-profile-photo:hover { transform:translateY(-1px) scale(1.04); box-shadow:0 5px 15px rgba(224,149,10,.3); }
+.admin-profile-photo img { width:100%; height:100%; object-fit:cover; }
+.admin-profile-error { margin:0 22px 12px; padding:9px 12px; display:flex; align-items:center; gap:7px; border:1px solid #f0c36a; border-radius:8px; background:#fff7e6; color:#8b5700; font-size:12px; }
 .jobs-tab-count { min-width:18px; height:18px; display:inline-grid; place-items:center; margin-left:3px; padding:0 5px; border-radius:999px; background:var(--orange); color:#1a0e00; font-size:10px; }
 .clickable-row { cursor:pointer; }
 .clickable-row:hover { background:#f5faf3; }

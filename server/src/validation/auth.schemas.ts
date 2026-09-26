@@ -23,6 +23,7 @@ export const customerProfileSchema = z.object({
   lastName: z.string().min(1).max(80),
   phone: z.string().min(7).max(30),
 });
+export const profileAvatarSchema = z.object({ avatarUrl: z.string().url().nullable() });
 
 export const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address').toLowerCase(),

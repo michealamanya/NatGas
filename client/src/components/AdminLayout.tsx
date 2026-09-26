@@ -1,9 +1,9 @@
 import {
   BarChart3, Briefcase, FileText, Globe, LayoutDashboard,
-  Image, LogOut, MapPin, MessageSquare, Package, Settings, Users,
+  Image, LogOut, MapPin, MessageSquare, Package, Settings, Users, Upload,
 } from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api, User } from '../api/client';
 
 const NAV = [
@@ -24,6 +24,9 @@ const NAV = [
 
 export default function AdminLayout({ user, onLogout }: { user: User; onLogout?: () => void }) {
   const navigate = useNavigate();
+  const [profile, setProfile] = useState(user);
+  const [profileError, setProfileError] = useState('');
+  const profileInput = useRef<HTMLInputElement>(null);
   const [newApplications, setNewApplications] = useState(0);
 
   useEffect(() => {
@@ -39,6 +42,16 @@ export default function AdminLayout({ user, onLogout }: { user: User; onLogout?:
     try { await api('/auth/logout', { method: 'POST' }); } catch { /**/ }
     onLogout?.();
     navigate('/admin/login');
+  };
+
+  const uploadProfilePhoto = async (file: File) => {
+    setProfileError('');
+    try {
+      const form = new FormData(); form.append('file', file); form.append('folder', 'staff-avatars');
+      const uploaded = await api<{ url: string }>('/admin/media/upload', { method: 'POST', body: form, headers: {} });
+      const updated = await api<User>('/auth/profile/avatar', { method: 'PUT', body: JSON.stringify({ avatarUrl: uploaded.data.url }) });
+      setProfile(current => ({ ...current, ...updated.data, avatarUrl: uploaded.data.url }));
+    } catch (reason) { setProfileError(reason instanceof Error ? reason.message : 'Unable to update profile photo.'); }
   };
 
   return (
@@ -90,16 +103,19 @@ export default function AdminLayout({ user, onLogout }: { user: User; onLogout?:
           <h2>Natgas Uganda — Content Management</h2>
           <div className="admin-top-r">
             <span style={{ fontSize: 12, color: 'var(--muted)', textTransform: 'capitalize' }}>
-              {user.role.replace(/_/g, ' ').toLowerCase()}
+              {profile.role.replace(/_/g, ' ').toLowerCase()}
             </span>
-            <div className="admin-avatar">
-              {user.firstName[0]}{user.lastName[0]}
-            </div>
             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--green)' }}>
-              {user.firstName} {user.lastName}
+              {profile.firstName} {profile.lastName}
             </span>
+            <button type="button" className="admin-profile-photo" onClick={() => profileInput.current?.click()} title="Change profile photo" aria-label="Change profile photo">
+              {profile.avatarUrl ? <img src={profile.avatarUrl} alt="" /> : <span>{profile.firstName[0]}{profile.lastName[0]}</span>}
+            </button>
+            <input ref={profileInput} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={event => { const file = event.target.files?.[0]; if (file) void uploadProfilePhoto(file); event.currentTarget.value = ''; }} />
           </div>
         </div>
+
+        {profileError && <div className="admin-profile-error" role="status"><Upload size={13} /> {profileError}</div>}
 
         {/* Page content */}
         <main className="admin-main">

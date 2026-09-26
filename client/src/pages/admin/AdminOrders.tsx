@@ -73,7 +73,9 @@ export default function AdminOrders() {
     try {
       await api(`/admin/orders/${orderId}`, {
         method: 'PUT',
-        body: JSON.stringify({ status, staffNotes }),
+        // Prisma stores notes as nullable, while the update schema accepts an
+        // optional string. Never send null to Zod for an untouched notes field.
+        body: JSON.stringify({ status, ...(staffNotes == null ? {} : { staffNotes }) }),
       });
       load();
     } catch (e) {
