@@ -1,6 +1,13 @@
 import { z } from 'zod';
 import { ContentStatus } from '@prisma/client';
 
+// Public uploads may be returned as same-origin relative URLs. This is safer
+// for production deployments and avoids leaking localhost into saved content.
+const assetUrlSchema = z.string().refine(
+  value => /^https?:\/\//i.test(value) || value.startsWith('/api/uploads/'),
+  'Image URL must be an absolute URL or a same-origin upload path',
+);
+
 export const createProductCategorySchema = z.object({
   name: z.string().min(1, 'Category name is required').max(100),
   description: z.string().max(500).optional(),
@@ -20,8 +27,8 @@ export const createProductSchema = z.object({
   features: z.array(z.string()).optional(),
   safetyInfo: z.string().optional(),
   specifications: z.record(z.string()).optional(),
-  imageUrl: z.string().url().optional().nullable(),
-  images: z.array(z.string().url()).optional(),
+  imageUrl: assetUrlSchema.optional().nullable(),
+  images: z.array(assetUrlSchema).optional(),
   price: z.number().nonnegative().optional().nullable(),
   compareAtPrice: z.number().nonnegative().optional().nullable(),
   currency: z.string().length(3).default('UGX'),
