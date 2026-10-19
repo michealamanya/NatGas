@@ -11,6 +11,7 @@ export default function AdminLocations() {
   const [open, setOpen]         = useState(false);
   const [toast, setToast]       = useState<Toast>(null);
   const [deleting, setDeleting] = useState<Location | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
 
   const notify = (msg: string, type: NonNullable<Toast>['type'] = 'success') => {
     setToast({ msg, type });
@@ -26,6 +27,7 @@ export default function AdminLocations() {
 
   const openForm = (item?: Location) => {
     setEditing(item ?? null);
+    setLogoFile(null);
     setOpen(true);
   };
 
@@ -37,15 +39,23 @@ export default function AdminLocations() {
   const save = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const d = Object.fromEntries(new FormData(e.currentTarget));
-    const payload = {
-      ...d,
-      isActive:        d.isActive        === 'on',
-      isHeadquarters:  d.isHeadquarters  === 'on',
-      latitude:        d.latitude  ? Number(d.latitude)  : null,
-      longitude:       d.longitude ? Number(d.longitude) : null,
-      displayOrder:    Number(d.displayOrder || 0),
-    };
+    let imageUrl = editing?.imageUrl;
+    const selectedLogo = logoFile;
     try {
+      if (selectedLogo) {
+        const form = new FormData(); form.append('file', selectedLogo); form.append('folder', 'clients');
+        const uploaded = await api<{ url: string }>('/admin/media/upload', { method: 'POST', body: form, headers: {} });
+        imageUrl = uploaded.data.url;
+      }
+      const payload = {
+        ...d,
+        imageUrl,
+        isActive:        d.isActive        === 'on',
+        isHeadquarters:  d.isHeadquarters  === 'on',
+        latitude:        d.latitude  ? Number(d.latitude)  : null,
+        longitude:       d.longitude ? Number(d.longitude) : null,
+        displayOrder:    Number(d.displayOrder || 0),
+      };
       const r = await api(
         editing ? `/admin/locations/${editing.id}` : '/admin/locations',
         { method: editing ? 'PUT' : 'POST', body: JSON.stringify(payload) },
@@ -120,6 +130,12 @@ export default function AdminLocations() {
             <label>
               Email
               <input type="email" name="email" defaultValue={editing?.email ?? ''} />
+            </label>
+
+            <label>
+              Logo / client image
+              <input type="file" accept="image/*,.svg" onChange={(event) => setLogoFile(event.target.files?.[0] ?? null)} />
+              {editing?.imageUrl && !logoFile && <small>Existing logo retained. Choose a file to replace it.</small>}
             </label>
 
             <label>

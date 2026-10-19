@@ -986,3 +986,73 @@ body {
 .checkout-form-head h2 { font-size:15px; font-weight:700; color:var(--green); margin:0; }
 .checkout-form-body { padding:20px; }
 .checkout-signin-card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:28px 24px; text-align:center; box-shadow:0 2px 10px rgba(0,0,0,.05); }
+
+/* Client/dealer identity marks stay legible on light and glass surfaces. */
+.client-logo { width:42px; height:42px; flex:0 0 42px; object-fit:contain; border-radius:12px; padding:5px; background:rgba(255,255,255,.82); border:1px solid rgba(39,119,30,.14); box-shadow:0 5px 14px rgba(20,72,38,.10); }
+.client-card-head { align-items:center; }
+.pcard-price-note,.pd-price-note { display:block; margin-top:4px; color:var(--gold-text); font-size:11px; font-weight:700; letter-spacing:.02em; }
+
+/* The directory is a client showcase, not a reseller/network listing. */
+.distribution-points > div:first-child .chip-sm { font-size:0; }
+.distribution-points > div:first-child .chip-sm::after { content:'OUR TRUSTED CLIENTS'; font-size:11px; }
+.distribution-points > .link-all { font-size:0; }
+.distribution-points > .link-all::before { content:'View client locations'; font-size:13px; }
+
+/* Dark distribution band keeps the map and trusted-client contacts readable. */
+.distribution-section { background:var(--green) !important; color:#fff; }
+.distribution-section h2 { color:#fff; }
+.distribution-map-card > p, .distribution-points p { color:#d9edd3; }
+.distribution-points { background:rgba(255,255,255,.09); border-color:rgba(255,255,255,.2); }
+
+/* Corporate visual finish: solid, restrained surfaces instead of the earlier
+   glass treatment. Keep the layout and routes intact while making content feel
+   like an established engineering company. */
+:root {
+  --gold: #ff6700;
+  --gold-2: #ff8533;
+  --gold-text: #c84d00;
+  --radius: 8px;
+  --shadow-sm: 0 1px 4px rgba(17,24,39,.06);
+  --shadow: 0 4px 14px rgba(17,24,39,.08);
+}
+body { background:#f7f8f7; }
+.topbar { background:#17211f; backdrop-filter:none; -webkit-backdrop-filter:none; }
+.main-nav { background:#fff; backdrop-filter:none; -webkit-backdrop-filter:none; }
+.page-hero, .section, .shop-section, .partners-section, .dealer-section, .home-review-section { background-color:#fff; }
+.admin-card, .stat-card, .scard, .acard, .pcard, .svc-card, .ncard, .contact-card,
+.customer-order-card, .customer-empty, .engineering-grid article, .guide-card, .partners-marquee,
+.shop-sidebar, .shop-toolbar, .product-card, .application-review, .admin-modal {
+  background:#fff;
+  border:1px solid var(--border);
+  box-shadow:var(--shadow-sm);
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+}
+.pcard, .svc-card, .ncard, .contact-card, .guide-card, .engineering-grid article,
+.customer-order-card, .stat-card, .scard, .acard { background:#fff !important; }
+.pcard:hover, .svc-card:hover, .ncard:hover, .contact-card:hover, .guide-card:hover,
+.engineering-grid article:hover, .customer-order-card:hover, .stat-card:hover, .scard:hover, .acard:hover {
+  background:#fff !important; transform:translateY(-2px); box-shadow:var(--shadow);
+}
+.btn { min-height:40px; border-radius:6px; box-shadow:none; }
+.btn-primary { background:var(--gold); color:#1b120d; }
+.btn-primary:hover, .btn-dark:hover, .btn-outline:hover { background:var(--gold); border-color:var(--gold); color:#1b120d; }
+.partners-grid-static .partners-track { width:100%; display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); animation:none; }
+.partners-grid-static .partners-track > a, .partners-grid-static .partners-track > div { flex:none; width:auto; }
+.partners-grid-static .partner-mark { min-height:92px; }
+@media (max-width:640px) {
+  .wrap { padding-inline:18px; }
+  .hero-h1 { font-size:clamp(31px,10vw,45px); }
+  .hero-banner { min-height:520px; }
+  .btn { width:100%; justify-content:center; }
+  .hero-btns { width:100%; }
+  .partners-grid-static .partners-track { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
+@media (max-width:1280px) and (min-width:861px) {
+  .main-nav { gap:12px; }
+  .nav-links { gap:1px; }
+  .nav-links > a, .nav-dropdown > button { padding-inline:7px; font-size:12px; }
+  .nav-shop-action span { display:none; }
+  .nav-shop-action { padding-inline:7px; }
+}

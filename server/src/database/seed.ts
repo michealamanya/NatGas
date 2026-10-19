@@ -68,6 +68,7 @@ async function main(): Promise<void> {
       safetyInfo: 'Store upright in a well-ventilated area. Keep away from heat sources. Check connections before use.',
       specifications: { 'Net Weight': '3 kg', 'Gross Weight': '5 kg', 'Height': '32 cm', 'Diameter': '18 cm' },
       displayOrder: 1,
+      price: 31000,
     },
     {
       name: '6kg LPG Cylinder',
@@ -81,6 +82,7 @@ async function main(): Promise<void> {
       specifications: { 'Net Weight': '6 kg', 'Gross Weight': '9.5 kg', 'Height': '42 cm', 'Diameter': '22 cm' },
       isFeatured: true,
       displayOrder: 2,
+      price: 59000,
     },
     {
       name: '12.5kg LPG Cylinder',
@@ -94,6 +96,7 @@ async function main(): Promise<void> {
       specifications: { 'Net Weight': '12.5 kg', 'Gross Weight': '22 kg', 'Height': '56 cm', 'Diameter': '30 cm' },
       isFeatured: true,
       displayOrder: 3,
+      price: 115000,
     },
     {
       name: '38kg LPG Cylinder',
@@ -106,6 +109,7 @@ async function main(): Promise<void> {
       safetyInfo: 'Must be installed by a qualified NATGAS technician. Requires commercial-grade regulator.',
       specifications: { 'Net Weight': '38 kg', 'Gross Weight': '72 kg', 'Height': '95 cm', 'Diameter': '38 cm' },
       displayOrder: 1,
+      price: 268000,
     },
   ];
 
@@ -125,6 +129,7 @@ async function main(): Promise<void> {
         features: p.features,
         safetyInfo: p.safetyInfo,
         specifications: p.specifications,
+        price: p.price,
         isAvailable: true,
         status: 'PUBLISHED',
         isFeatured: p.isFeatured ?? false,

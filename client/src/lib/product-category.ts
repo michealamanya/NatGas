@@ -2,6 +2,21 @@ import type { ProductCategory } from '../api/client';
 
 type CategorySource = Pick<ProductCategory, 'name' | 'slug' | 'description'> | undefined;
 
+export function isLpgRefillProduct(product: { name?: string; cylinderSize?: string; category?: CategorySource }): boolean {
+  const key = `${product.name ?? ''} ${product.cylinderSize ?? ''} ${product.category?.slug ?? ''} ${product.category?.name ?? ''}`.toLowerCase();
+  return Boolean(product.cylinderSize) && /(cylinder|lpg)/.test(key) && !/(tank|accessor|equipment)/.test(key);
+}
+
+export function refillDisplayName(product: { name: string; cylinderSize?: string; category?: CategorySource }): string {
+  if (!isLpgRefillProduct(product)) return product.name;
+  const size = product.cylinderSize ?? product.name.match(/\d+(?:\.\d+)?\s*kg/i)?.[0];
+  return size ? `${size.replace(/\s+/g, '')} LPG Refill` : product.name;
+}
+
+export function refillCategoryLabel(product: { name?: string; cylinderSize?: string; category?: CategorySource }): string {
+  return isLpgRefillProduct(product) ? 'TotalEnergies LPG Refills' : (product.category?.name ?? 'NATGAS EQUIPMENT');
+}
+
 export type CategoryPresentation = { title: string; description: string; detailLabel: string; detailPlaceholder: string; specificationHint: string };
 
 export function getCategoryPresentation(category: CategorySource): CategoryPresentation {

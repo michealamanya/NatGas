@@ -130,6 +130,7 @@ export interface Location {
   isHeadquarters: boolean;
   isActive: boolean;
   displayOrder?: number;
+  imageUrl?: string;
 }
 
 export interface FAQ {

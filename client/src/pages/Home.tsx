@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import { api, Job, Location, NewsArticle, Product, ProductCategory } from '../api/client';
 import { addToCart } from '../lib/cart';
 import { useRealtimeRefresh } from '../lib/realtime';
+import { isLpgRefillProduct, refillCategoryLabel, refillDisplayName } from '../lib/product-category';
 
 const COLORS = ['cyl-bg-0','cyl-bg-1','cyl-bg-2','cyl-bg-3','cyl-bg-4'];
 const priceLabel = (price?: string | number, currency = 'UGX') => price === undefined || price === null ? 'Price on confirmation' : new Intl.NumberFormat('en-UG', { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(price));
@@ -17,14 +18,14 @@ export default function Home() {
   const [products,   setProducts]   = useState<Product[]>([]);
   const [news,       setNews]        = useState<NewsArticle[]>([]);
   const [jobs,       setJobs]        = useState<Job[]>([]);
-  const [networkPoints, setNetworkPoints] = useState<Location[]>([]);
+  const [clientPoints, setClientPoints] = useState<Location[]>([]);
   const [activeTab,  setActiveTab]   = useState('');
   const [experience, setExperience] = useState<Record<string, string>>({});
 
   useEffect(() => {
     api<NewsArticle[]>('/news?limit=3').then(r => setNews(r.data ?? [])).catch(() => undefined);
     api<Job[]>('/jobs?limit=3').then(r => setJobs(r.data ?? [])).catch(() => undefined);
-    api<Location[]>('/locations').then(r => setNetworkPoints(r.data ?? [])).catch(() => undefined);
+    api<Location[]>('/locations').then(r => setClientPoints(r.data ?? [])).catch(() => undefined);
     api<Record<string, unknown>>('/settings/public').then(r => {
       setExperience(Object.fromEntries(Object.entries(r.data ?? {}).map(([key, value]) => [key, String(value ?? '')])));
     }).catch(() => undefined);
@@ -39,11 +40,12 @@ export default function Home() {
   useRealtimeRefresh(() => {
     api<NewsArticle[]>('/news?limit=3').then(r => setNews(r.data ?? [])).catch(() => undefined);
     api<Job[]>('/jobs?limit=3').then(r => setJobs(r.data ?? [])).catch(() => undefined);
-    api<Location[]>('/locations').then(r => setNetworkPoints(r.data ?? [])).catch(() => undefined);
+    api<Location[]>('/locations').then(r => setClientPoints(r.data ?? [])).catch(() => undefined);
     api<Record<string, unknown>>('/settings/public').then(r => setExperience(Object.fromEntries(Object.entries(r.data ?? {}).map(([key, value]) => [key, String(value ?? '')])))).catch(() => undefined);
     const q = new URLSearchParams({ limit: '10' }); if (activeTab) q.set('category', activeTab); else q.set('featured', 'true'); api<Product[]>(`/products?${q}`).then(r => setProducts(r.data ?? [])).catch(() => undefined);
   });
 
+  const networkPoints = clientPoints;
   const FALLBACK = ['3kg','6kg','12.5kg','38kg','Flanges'];
   const heroMedia = experience.home_hero_media_url;
   let feedback: Array<{ quote: string; author: string; role: string }> = [];
@@ -69,7 +71,7 @@ export default function Home() {
           <div className="hero-copy">
             <div className="hero-badge">
               <ShieldCheck size={11} style={{ verticalAlign:'middle', marginRight:4 }} />
-              Gas Engineering &amp; LPG Infrastructure · Uganda
+              Gas Engineering &amp; TotalEnergies LPG Refills · Uganda
             </div>
             <h1 className="hero-h1">
               {experience.homepage_hero_title || 'Engineering safe LPG'}<br /><em>systems that perform.</em>
@@ -90,7 +92,7 @@ export default function Home() {
               { icon: HardHat,     title: 'Gas Engineering',        sub: 'Design, drawings & installation' },
               { icon: Award,       title: 'Safety & Compliance',    sub: 'Inspection, testing & standards' },
               { icon: Wrench,      title: 'Lifecycle Support',      sub: 'Maintenance & technical consultancy' },
-              { icon: Globe,       title: 'Distribution Network',   sub: 'Refills and reliable LPG supply' },
+              { icon: Globe,       title: 'Authorized LPG Refills', sub: 'TotalEnergies supply and delivery' },
             ].map(({ icon: Icon, title, sub }) => (
               <div className="hero-stat-card" key={title}>
                 <div className="hero-stat-icon"><Icon size={18} /></div>
@@ -257,6 +259,8 @@ export default function Home() {
 /* ── Reusable cards ─ */
 export function ProductCard({ p, idx }: { p: Product; idx: number }) {
   const [added, setAdded] = useState(false);
+  const isRefill = isLpgRefillProduct(p);
+  const displayName = refillDisplayName(p);
   return (
     <article className="pcard">
       <Link to={`/products/${p.slug}`} className={`pcard-img ${p.imageUrl ? '' : COLORS[idx % 5]}`}>
@@ -272,11 +276,11 @@ export function ProductCard({ p, idx }: { p: Product; idx: number }) {
       </Link>
       <div className="pcard-body">
         <div className="pcard-topline">
-          <span className="pcard-cat">{p.category?.name ?? 'NATGAS EQUIPMENT'}</span>
+          <span className="pcard-cat">{refillCategoryLabel(p)}</span>
           {p.cylinderSize && <span className="pcard-size">{p.cylinderSize}</span>}
         </div>
-        <Link to={`/products/${p.slug}`} className="pcard-name">{p.name}</Link>
-        <strong className="pcard-price">{priceLabel(p.price, p.currency)}</strong>
+        <Link to={`/products/${p.slug}`} className="pcard-name">{displayName}</Link>
+        <strong className="pcard-price">{priceLabel(p.price, p.currency)}</strong>{isRefill && <small className="pcard-price-note">Refill price</small>}
         <div className="pcard-footer">
           <span className={`pcard-avail ${p.isAvailable ? 'avail-yes' : 'avail-no'}`}>
             {p.isAvailable ? 'In stock' : 'Unavailable'}

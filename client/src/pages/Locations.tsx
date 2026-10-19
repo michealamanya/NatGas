@@ -9,10 +9,10 @@ export default function Locations() {
 
   useEffect(() => {
     api<Location[]>('/locations')
-      .then((r) => setClients(r.data ?? []))
+      .then((r) => setClients(dedupeLocations(r.data ?? [])))
       .catch(() => undefined);
   }, []);
-  useRealtimeRefresh(() => { api<Location[]>('/locations').then((r) => setClients(r.data ?? [])).catch(() => undefined); });
+  useRealtimeRefresh(() => { api<Location[]>('/locations').then((r) => setClients(dedupeLocations(r.data ?? []))).catch(() => undefined); });
 
   const found = useMemo(
     () =>
@@ -56,7 +56,11 @@ export default function Locations() {
             {found.map((client) => (
               <article key={client.id} className="client-card">
                 <div className="client-card-head">
-                  <MapPin size={18} className="client-pin" />
+                  {client.imageUrl ? (
+                    <img className="client-logo" src={client.imageUrl} alt="" loading="lazy" />
+                  ) : (
+                    <MapPin size={18} className="client-pin" />
+                  )}
                   <div>
                     <h3>{client.name}</h3>
                     {client.isHeadquarters && (
@@ -118,4 +122,14 @@ export default function Locations() {
       </section>
     </>
   );
+}
+
+function dedupeLocations(items: Location[]): Location[] {
+  const seen = new Set<string>();
+  return items.filter(item => {
+    const key = `${item.name}|${item.address}|${item.district}`.trim().toLowerCase().replace(/\s+/g, ' ');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }

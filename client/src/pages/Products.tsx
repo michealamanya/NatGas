@@ -5,7 +5,7 @@ import { api, Product, ProductCategory } from '../api/client';
 import { ProductCard } from './Home';
 import { addToCart } from '../lib/cart';
 import { useRealtimeRefresh } from '../lib/realtime';
-import { getCategoryPresentation } from '../lib/product-category';
+import { getCategoryPresentation, isLpgRefillProduct, refillCategoryLabel, refillDisplayName } from '../lib/product-category';
 
 const COLORS = ['cyl-bg-0','cyl-bg-1','cyl-bg-2','cyl-bg-3','cyl-bg-4'];
 const LIMIT  = 15;
@@ -103,7 +103,7 @@ export default function Products() {
         <div className="page-hero-wrap">
           <div className="chip">NATGAS PRODUCTS</div>
           <h1>Gas engineering equipment &amp; accessories</h1>
-          <p>Certified valves, fittings, piping, regulators, safety equipment, LPG systems and cylinders for every project scale.</p>
+          <p>Certified valves, fittings, piping, regulators, safety equipment, LPG systems and TotalEnergies refills for every project scale.</p>
         </div>
       </div>
 
@@ -203,6 +203,8 @@ export function ProductDetail() {
   const images   = Array.isArray(product.images) ? product.images as string[] : [];
   const allImgs  = [product.imageUrl, ...images].filter(Boolean) as string[];
   const colorIdx = 0;
+  const isRefill = isLpgRefillProduct(product);
+  const displayName = refillDisplayName(product);
 
   return (
     <>
@@ -210,7 +212,7 @@ export function ProductDetail() {
         <div className="page-hero-wrap">
           <Link to="/products" className="page-hero-back"><ArrowLeft size={13} /> All products</Link>
           <div className="chip">{product.category?.name ?? 'NATGAS EQUIPMENT'}</div>
-          <h1>{product.name}</h1>
+          <h1>{displayName}</h1>
         </div>
       </div>
 
@@ -243,9 +245,10 @@ export function ProductDetail() {
 
             {/* Info */}
             <div className="pd-info">
-              <span className="pd-cat-tag">{product.category?.name ?? 'NATGAS EQUIPMENT'}</span>
-              <h1 className="pd-title">{product.name}</h1>
+              <span className="pd-cat-tag">{refillCategoryLabel(product)}</span>
+              <h1 className="pd-title">{displayName}</h1>
               <div className="pd-price">{priceLabel(product.price, product.currency)}</div>
+              {isRefill && <span className="pd-price-note">Refill price · bring your cylinder for filling</span>}
 
               <div className="pd-avail">
                 <span style={{ width:8, height:8, borderRadius:'50%', background: product.isAvailable ? 'var(--green-3)' : '#9b5b00', display:'inline-block' }} />

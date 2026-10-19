@@ -107,13 +107,13 @@ export function About() {
       <section className="partners-section" aria-labelledby="partners-title">
         <div className="wrap">
           <div className="partners-heading">
-            <span className="chip-sm">TRUSTED NETWORK</span>
-            <h2 id="partners-title">Working with industry leaders.</h2>
-            <p>Our solutions are supported by trusted product, engineering and hospitality partners.</p>
+            <span className="chip-sm">INDUSTRIAL PARTNERS</span>
+            <h2 id="partners-title">Trusted partners behind reliable delivery.</h2>
+            <p>Approved engineering, product and hospitality partners supporting NatGas Uganda projects.</p>
           </div>
-          <div className="partners-marquee" aria-label="Selected partners">
+          <div className="partners-marquee partners-grid-static" aria-label="Industrial partners">
             <div className="partners-track">
-              {[...partners, ...partners].map((partner, index) => {
+              {partners.filter((partner, index, all) => all.findIndex(item => item.name.trim().toLowerCase() === partner.name.trim().toLowerCase()) === index).map((partner, index) => {
                 const mark = <div className="partner-mark">{partner.logoUrl ? <img src={partner.logoUrl} alt={partner.name} loading="lazy" /> : partner.name}</div>;
                 return partner.websiteUrl ? <a href={partner.websiteUrl} target="_blank" rel="noreferrer" key={`${partner.name}-${index}`}>{mark}</a> : <div key={`${partner.name}-${index}`}>{mark}</div>;
               })}
