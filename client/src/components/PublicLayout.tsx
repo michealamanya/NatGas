@@ -131,9 +131,11 @@ export default function PublicLayout() {
           aria-expanded={mobileOpen}
           onClick={() => setMobileOpen((o) => !o)}
         >
-          <span className={`hbar hbar-1${mobileOpen ? ' open' : ''}`} />
-          <span className={`hbar hbar-2${mobileOpen ? ' open' : ''}`} />
-          <span className={`hbar hbar-3${mobileOpen ? ' open' : ''}`} />
+          <span className="hamburger-icon" aria-hidden="true">
+            <span className={`hbar hbar-1${mobileOpen ? ' open' : ''}`} />
+            <span className={`hbar hbar-2${mobileOpen ? ' open' : ''}`} />
+            <span className={`hbar hbar-3${mobileOpen ? ' open' : ''}`} />
+          </span>
         </button>
 
         <div className={`nav-links${mobileOpen ? ' open' : ''}`}>
