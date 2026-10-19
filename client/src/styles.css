@@ -1053,6 +1053,17 @@ body { background:#f7f8f7; }
   background:#fff !important; transform:translateY(-2px); box-shadow:var(--shadow);
 }
 .btn { min-height:40px; border-radius:6px; box-shadow:none; }
+.error-state { min-height:60vh; display:grid; place-items:center; align-content:center; gap:14px; padding:48px 20px; text-align:center; background:linear-gradient(135deg,#f7fbf8,#fffaf3); color:var(--green); }
+.error-state h1, .error-state p { margin:0; }
+.error-state p { max-width:420px; color:var(--muted); }
+.not-found-page { min-height:62vh; display:grid; place-items:center; align-content:center; gap:14px; padding:64px 20px; text-align:center; background:linear-gradient(135deg,#f7fbf8,#fffaf3); color:var(--green); }
+.not-found-code { font:700 clamp(72px,14vw,150px)/.8 'Playfair Display',Georgia,serif; color:#dce9df; letter-spacing:-.06em; }
+.not-found-page h1, .not-found-page p { margin:0; }
+.not-found-page h1 { font-size:clamp(26px,4vw,42px); }
+.not-found-page p { max-width:520px; color:var(--muted); line-height:1.7; }
+.not-found-page code { padding:2px 6px; border-radius:4px; background:#edf4ef; color:var(--green); }
+.not-found-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; font-size:0; }
+.not-found-actions .btn { font-size:14px; }
 .btn-primary { background:var(--gold); color:#1b120d; }
 .btn-primary:hover, .btn-dark:hover, .btn-outline:hover { background:var(--gold); border-color:var(--gold); color:#1b120d; }
 .partners-grid-static .partners-track { width:100%; display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); animation:none; }
@@ -1063,7 +1074,7 @@ body { background:#f7f8f7; }
   .main-nav { position:sticky; top:8px; z-index:300; height:64px; margin:8px 12px 0; padding:0 14px; border:1px solid #d9e2dc; border-radius:16px; box-shadow:0 8px 22px rgba(17,24,39,.12); }
   .main-nav > a:first-child { min-width:0; }
   .main-nav > a:first-child img { height:40px !important; }
-  .hamburger { width:auto; min-width:86px; height:42px; padding:0 14px; border:1px solid #d7e1da; border-radius:10px; background:#f7f9f7; color:var(--green); gap:8px; flex-direction:row; }
+  .hamburger { width:auto; min-width:86px; height:42px; margin-left:auto; flex-shrink:0; padding:0 14px; border:1px solid #d7e1da; border-radius:10px; background:#f7f9f7; color:var(--green); gap:8px; flex-direction:row; }
   .hamburger::after { content:'Menu'; font-size:13px; font-weight:700; }
   .nav-links { top:80px; left:12px; right:12px; border:1px solid #d9e2dc; border-radius:14px; padding:10px; box-shadow:0 12px 28px rgba(17,24,39,.16); }
   .hero-h1 { font-size:clamp(31px,10vw,45px); }

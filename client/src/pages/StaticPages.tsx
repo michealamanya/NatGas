@@ -17,7 +17,18 @@ export function About() {
           { name: 'TotalEnergies' }, { name: 'STABEX International' }, { name: 'Shell' },
           { name: 'Serena Hotels' }, { name: 'Royal Van Zanten' },
         ] : JSON.parse(String(raw));
-        if (Array.isArray(parsed)) setPartners(parsed.filter(partner => partner && partner.name && partner.isActive !== false));
+        if (Array.isArray(parsed)) {
+          const safePartners = parsed
+            .filter((partner): partner is Record<string, unknown> => Boolean(partner && typeof partner === 'object'))
+            .map(partner => ({
+              name: String(partner.name ?? '').trim(),
+              logoUrl: typeof partner.logoUrl === 'string' ? partner.logoUrl : undefined,
+              websiteUrl: typeof partner.websiteUrl === 'string' ? partner.websiteUrl : undefined,
+              isActive: partner.isActive !== false,
+            }))
+            .filter(partner => partner.name && partner.isActive);
+          setPartners(safePartners);
+        }
       } catch { setPartners([]); }
     }).catch(() => undefined);
   }, []);

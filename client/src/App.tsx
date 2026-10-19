@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
-import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
+import { Component, lazy, Suspense, useEffect, useState, type ErrorInfo, type ReactNode } from 'react';
+import { Link, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { api, User } from './api/client';
 import AdminLayout from './components/AdminLayout';
 import PublicLayout from './components/PublicLayout';
@@ -59,6 +59,30 @@ function ScrollTop() {
   return null;
 }
 
+class AppErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('NatGas page failed to render', error, info);
+  }
+
+  render() {
+    if (!this.state.hasError) return this.props.children;
+    return (
+      <main className="error-state" role="alert">
+        <span className="chip-sm">TEMPORARY DISPLAY ERROR</span>
+        <h1>We’re refreshing this page.</h1>
+        <p>A recent update could not be displayed. Reload once to continue.</p>
+        <button className="btn btn-primary" type="button" onClick={() => window.location.reload()}>Reload page</button>
+      </main>
+    );
+  }
+}
+
 // ── Protected admin wrapper ────────────────────────────────────────────────────
 function AdminGuard({ user, children }: { user: User | null; children: ReactNode }) {
   if (!user) return <Navigate to="/admin/login" replace />;
@@ -90,6 +114,7 @@ export default function App() {
   return (
     <Suspense fallback={<Spinner />}>
       <ScrollTop />
+      <AppErrorBoundary>
       <Routes>
 
         {/* ── Public website ──────────────────────────────── */}
@@ -114,6 +139,7 @@ export default function App() {
           <Route path="terms"        element={<Terms />} />
           <Route path="order"        element={<OrderCart />} />
           <Route path="account"      element={<CustomerAccount />} />
+          <Route path="*"             element={<NotFound />} />
         </Route>
 
         {/* ── Admin login (no layout) ─────────────────────── */}
@@ -154,19 +180,24 @@ export default function App() {
         {/* ── Catch-all ───────────────────────────────────── */}
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </AppErrorBoundary>
     </Suspense>
   );
 }
 
 function NotFound() {
+  const location = useLocation();
   return (
-    <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: '40px 20px', textAlign: 'center' }}>
-      <div style={{ fontFamily: "'Playfair Display',Georgia,serif", fontSize: 96, fontWeight: 700, color: '#dde5e2', lineHeight: 1 }}>404</div>
-      <h1 style={{ fontSize: 28, color: 'var(--green, #0e3d39)', margin: 0 }}>Page not found</h1>
-      <p style={{ color: '#52706b', maxWidth: 400 }}>The page you're looking for doesn't exist or has been moved.</p>
-      <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#0e3d39', color: '#fff', padding: '12px 22px', fontWeight: 600, fontSize: 14, textDecoration: 'none', borderRadius: 6 }}>
+    <main className="not-found-page">
+      <div className="not-found-code">404</div>
+      <span className="chip-sm">PAGE NOT FOUND</span>
+      <h1>This page has moved or does not exist.</h1>
+      <p>We could not find <code>{location.pathname}</code>. Try the main navigation or return to the NatGas homepage.</p>
+      <div className="not-found-actions">
         ← Return to homepage
-      </a>
-    </div>
+        <Link className="btn btn-primary" to="/">Return home</Link>
+        <Link className="btn btn-outline" to="/contact">Contact NatGas</Link>
+      </div>
+    </main>
   );
 }
