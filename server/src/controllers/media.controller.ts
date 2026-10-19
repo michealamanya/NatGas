@@ -80,6 +80,12 @@ export async function uploadMedia(req: AuthenticatedRequest, res: Response): Pro
   }
 
   const result = await uploadFile(buffer ?? file.buffer, filename, file.mimetype, folder);
+  // Local uploads are served by the API's public `/api/uploads` route. Build
+  // the URL from the current request so uploads work behind Nginx and never
+  // leak a development-only localhost URL into production content.
+  const publicUrl = result.provider === 'LOCAL'
+    ? `${req.protocol}://${req.get('host')}${config.server.apiPrefix}/uploads/${result.storageKey}`
+    : result.url;
 
   const media = await prisma.media.create({
     data: {
@@ -87,7 +93,7 @@ export async function uploadMedia(req: AuthenticatedRequest, res: Response): Pro
       originalName: file.originalname,
       mimeType: file.mimetype,
       size: file.size,
-      url: result.url,
+      url: publicUrl,
       altText: req.body.altText,
       caption: req.body.caption,
       provider: result.provider,

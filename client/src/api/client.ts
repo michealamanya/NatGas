@@ -23,7 +23,21 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<A
       : '';
     throw new Error(fieldErrors || body.message || 'Request failed.');
   }
-  return body;
+  return { ...body, data: normalizeLegacyUploadUrls(body.data) } as ApiResult<T>;
+}
+
+// Older records may contain the development URL that was generated before
+// production storage was configured. Resolve those URLs through the current
+// site's API so existing product, gallery and partner images keep working.
+function normalizeLegacyUploadUrls<T>(value: T): T {
+  if (typeof value === 'string') {
+    return value.replace(/^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/(?:api\/)?uploads\//i, '/api/uploads/') as T;
+  }
+  if (Array.isArray(value)) return value.map(item => normalizeLegacyUploadUrls(item)) as T;
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, normalizeLegacyUploadUrls(item)])) as T;
+  }
+  return value;
 }
 
 // ─── Types ───────────────────────────────────────────────────────────────────

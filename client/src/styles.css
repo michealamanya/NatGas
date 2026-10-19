@@ -638,6 +638,7 @@ body {
 .af .fg { margin-bottom:14px; }
 .toast-msg { position:fixed; bottom:22px; right:22px; z-index:600; background:var(--green); color:#fff; padding:12px 18px; border-radius:var(--radius); font-size:13px; font-weight:600; box-shadow:var(--shadow-lg); display:flex; align-items:center; gap:8px; animation:slideup .22s ease; }
 .toast-msg.err { background:#9b5b00; }
+.admin-main > .form-ok, .admin-main > .form-err { position:fixed; right:22px; bottom:22px; z-index:700; width:min(420px,calc(100vw - 44px)); margin:0; box-shadow:var(--shadow-lg); animation:slideup .22s ease; }
 @keyframes slideup { from { transform:translateY(16px); opacity:0; } to { transform:translateY(0); opacity:1; } }
 
 /* ── Login ─────────────────────────────────────────────────────── */
