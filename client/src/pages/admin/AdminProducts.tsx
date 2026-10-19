@@ -2,6 +2,7 @@ import { CheckCircle2, Loader2, Plus, Trash2, X } from 'lucide-react';
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { api, Product, ProductCategory } from '../../api/client';
 import { getCategoryPresentation } from '../../lib/product-category';
+import ConfirmDialog from '../../components/ConfirmDialog';
 
 interface AdminProduct extends Product { updatedAt: string; }
 
@@ -23,6 +24,7 @@ export default function AdminProducts() {
   const [existingGallery, setExistingGallery] = useState<string[]>([]);
   const [galleryFiles, setGalleryFiles] = useState<{ file: File; preview: string }[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [confirmAction, setConfirmAction] = useState<{ kind: 'product' | 'category'; product?: AdminProduct; category?: ProductCategory } | null>(null);
 
   const notify = (msg: string, type: 'success'|'error' = 'success') => {
     setToast({ msg, type });
@@ -159,11 +161,12 @@ export default function AdminProducts() {
     }
   };
 
-  const archive = async (p: AdminProduct) => {
-    if (!confirm(`Archive "${p.name}"?`)) return;
+  const archive = async () => {
+    const p = confirmAction?.product;
+    if (!p) return;
     try {
       await api(`/admin/products/${p.id}`, { method: 'DELETE' });
-      notify('Product archived');
+      notify('Product archived'); setConfirmAction(null);
       load();
     } catch (err) {
       notify(err instanceof Error ? err.message : 'Failed', 'error');
@@ -179,14 +182,16 @@ export default function AdminProducts() {
     } catch (err) { notify(err instanceof Error ? err.message : 'Could not create category.', 'error'); }
   };
 
-  const removeCategory = async (category: ProductCategory) => {
-    if (!confirm(`Remove “${category.name}”? Products in it will remain in the catalogue but become uncategorised.`)) return;
-    try { await api(`/admin/product-categories/${category.id}`, { method: 'DELETE' }); notify('Category removed.'); loadCategories(); load(); }
+  const removeCategory = async () => {
+    const category = confirmAction?.category;
+    if (!category) return;
+    try { await api(`/admin/product-categories/${category.id}`, { method: 'DELETE' }); notify('Category removed.'); setConfirmAction(null); loadCategories(); load(); }
     catch (err) { notify(err instanceof Error ? err.message : 'Could not remove category.', 'error'); }
   };
 
   return (
     <>
+      <ConfirmDialog open={confirmAction !== null} title={confirmAction?.kind === 'category' ? 'Remove this category?' : 'Archive this product?'} message={confirmAction?.kind === 'category' ? `Products in “${confirmAction.category?.name}” will remain in the catalogue but become uncategorised.` : `“${confirmAction?.product?.name ?? 'This product'}” will be archived and removed from the public catalogue.`} confirmLabel={confirmAction?.kind === 'category' ? 'Remove category' : 'Archive product'} onConfirm={confirmAction?.kind === 'category' ? removeCategory : archive} onCancel={() => setConfirmAction(null)} />
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom: 24 }}>
         <div>
           <h1 className="admin-page-title">Products</h1>
@@ -195,7 +200,7 @@ export default function AdminProducts() {
         <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}><button className="btn btn-outline" onClick={() => setShowCategories(v => !v)}>Manage categories</button><button className="btn btn-primary" onClick={openCreate}><Plus size={15} /> Add product</button></div>
       </div>
 
-      {showCategories && <section className="admin-card admin-card-body admin-form" style={{ marginBottom:24 }}><h2>Catalogue categories</h2><p className="admin-page-sub">Create categories for accessories, equipment, cylinders, and any new product range. They appear automatically as filters on the public catalogue.</p><form className="form-row-2" onSubmit={createCategory}><div className="form-group"><label>Category name<input required name="name" placeholder="e.g. Accessories & Equipment" /></label></div><div className="form-group"><label>Display order<input type="number" name="displayOrder" defaultValue="0" /></label></div><div className="form-group"><label>Description<input name="description" placeholder="Optional short description" /></label></div><div className="form-group" style={{ display:'flex', alignItems:'end' }}><button className="btn btn-primary"><Plus size={14}/> Add category</button></div></form><div className="category-admin-list">{categories.map(category => <div key={category.id}><span><b>{category.name}</b><small>{category.description || 'No description'}</small></span><button type="button" className="tact" onClick={() => removeCategory(category)}><Trash2 size={13}/> Remove</button></div>)}{!categories.length && <p className="media-empty">No categories yet.</p>}</div></section>}
+      {showCategories && <section className="admin-card admin-card-body admin-form" style={{ marginBottom:24 }}><h2>Catalogue categories</h2><p className="admin-page-sub">Create categories for accessories, equipment, cylinders, and any new product range. They appear automatically as filters on the public catalogue.</p><form className="form-row-2" onSubmit={createCategory}><div className="form-group"><label>Category name<input required name="name" placeholder="e.g. Accessories & Equipment" /></label></div><div className="form-group"><label>Display order<input type="number" name="displayOrder" defaultValue="0" /></label></div><div className="form-group"><label>Description<input name="description" placeholder="Optional short description" /></label></div><div className="form-group" style={{ display:'flex', alignItems:'end' }}><button className="btn btn-primary"><Plus size={14}/> Add category</button></div></form><div className="category-admin-list">{categories.map(category => <div key={category.id}><span><b>{category.name}</b><small>{category.description || 'No description'}</small></span><button type="button" className="tact" onClick={() => setConfirmAction({ kind:'category', category })}><Trash2 size={13}/> Remove</button></div>)}{!categories.length && <p className="media-empty">No categories yet.</p>}</div></section>}
 
       {/* Create/Edit form */}
       {showForm && (
@@ -371,7 +376,7 @@ export default function AdminProducts() {
                         <button className="tbl-btn" onClick={() => togglePublish(p)}>
                           {p.status === 'PUBLISHED' ? 'Unpublish' : 'Publish'}
                         </button>
-                        <button className="tbl-btn danger" onClick={() => archive(p)}>
+                        <button className="tbl-btn danger" onClick={() => setConfirmAction({ kind:'product', product:p })}>
                           <Trash2 size={13} />
                         </button>
                       </div>

@@ -1006,6 +1006,22 @@ body {
 .distribution-map-card > p, .distribution-points p { color:#d9edd3; }
 .distribution-points { background:rgba(255,255,255,.09); border-color:rgba(255,255,255,.2); }
 
+/* Admin overview: compact information cards with a clear operational hierarchy. */
+.admin-main { background:#f3f5f4 !important; }
+.admin-page-head { margin-bottom:22px; }
+.stat-cards { grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
+.stat-card { min-height:116px; padding:18px 20px; border-radius:10px; background:#fff !important; border:1px solid #d8e1dc; box-shadow:0 2px 8px rgba(17,24,39,.05); }
+.stat-card-label { color:#3f504a; font-size:13px; font-weight:700; letter-spacing:.01em; }
+.stat-card-icon { width:32px; height:32px; display:grid; place-items:center; border-radius:8px; color:var(--green); background:#edf5ee; }
+.stat-card-value { margin-top:9px; color:var(--green); font-size:28px; font-weight:800; line-height:1; }
+.stat-card-sub { display:block; margin-top:7px; color:#66736e; font-size:12px; }
+.stat-card:hover { border-color:rgba(255,103,0,.45); box-shadow:0 7px 18px rgba(17,24,39,.09); transform:translateY(-2px); }
+.admin-card { background:#fff !important; border-color:#d8e1dc; box-shadow:0 2px 8px rgba(17,24,39,.05); }
+.admin-card-head { min-height:58px; }
+.admin-card-body .btn { min-height:40px; }
+@media (max-width:900px) { .stat-cards { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width:560px) { .admin-main { padding:20px 16px; } .stat-cards { grid-template-columns:1fr; gap:12px; } .stat-card { min-height:100px; } }
+
 /* Corporate visual finish: solid, restrained surfaces instead of the earlier
    glass treatment. Keep the layout and routes intact while making content feel
    like an established engineering company. */
@@ -1044,8 +1060,14 @@ body { background:#f7f8f7; }
 .partners-grid-static .partner-mark { min-height:92px; }
 @media (max-width:640px) {
   .wrap { padding-inline:18px; }
+  .main-nav { position:sticky; top:8px; z-index:300; height:64px; margin:8px 12px 0; padding:0 14px; border:1px solid #d9e2dc; border-radius:16px; box-shadow:0 8px 22px rgba(17,24,39,.12); }
+  .main-nav > a:first-child { min-width:0; }
+  .main-nav > a:first-child img { height:40px !important; }
+  .hamburger { width:auto; min-width:86px; height:42px; padding:0 14px; border:1px solid #d7e1da; border-radius:10px; background:#f7f9f7; color:var(--green); gap:8px; flex-direction:row; }
+  .hamburger::after { content:'Menu'; font-size:13px; font-weight:700; }
+  .nav-links { top:80px; left:12px; right:12px; border:1px solid #d9e2dc; border-radius:14px; padding:10px; box-shadow:0 12px 28px rgba(17,24,39,.16); }
   .hero-h1 { font-size:clamp(31px,10vw,45px); }
-  .hero-banner { min-height:520px; }
+  .hero-banner { min-height:520px; border-radius:0; }
   .btn { width:100%; justify-content:center; }
   .hero-btns { width:100%; }
   .partners-grid-static .partners-track { grid-template-columns:repeat(2,minmax(0,1fr)); }

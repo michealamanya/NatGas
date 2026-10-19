@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Plus, RotateCcw, Save, Trash2, Upload } from 'lucide-react';
 import { api } from '../../api/client';
+import ConfirmDialog from '../../components/ConfirmDialog';
 
 type Values = Record<string, string>;
 const defaults: Values = { home_hero_media_url: '', home_hero_media_type: 'image', home_hero_overlay: '70', home_announcement_enabled: 'false', home_announcement_label: 'New', home_announcement_text: '', home_announcement_link: '', home_announcement_media_url: '', site_font: 'Inter' };
@@ -16,6 +17,7 @@ export default function AdminExperience() {
   const [error, setError] = useState('');
   const [partners, setPartners] = useState<Partner[]>([]);
   const [feedback, setFeedback] = useState<Feedback[]>([]);
+  const [restoreOpen, setRestoreOpen] = useState(false);
   const set = (key: string, value: string) => setValues(current => ({ ...current, [key]: value }));
 
   useEffect(() => {
@@ -60,8 +62,7 @@ export default function AdminExperience() {
   };
 
   const restore = async () => {
-    if (!confirm('Restore visual defaults? Content, users, orders and products will not change.')) return;
-    try { const result = await api('/admin/settings/restore-defaults', { method: 'POST' }); setValues(defaults); setPartners([]); setFeedback([]); window.dispatchEvent(new Event('natgas-settings-change')); setNotice(result.message ?? 'Defaults restored.'); } catch (reason) { setError(reason instanceof Error ? reason.message : 'Unable to restore.'); }
+    try { const result = await api('/admin/settings/restore-defaults', { method: 'POST' }); setValues(defaults); setPartners([]); setFeedback([]); setRestoreOpen(false); window.dispatchEvent(new Event('natgas-settings-change')); setNotice(result.message ?? 'Defaults restored.'); } catch (reason) { setError(reason instanceof Error ? reason.message : 'Unable to restore.'); }
   };
 
   const addPartner = () => setPartners(current => [...current, { id: `partner-${Date.now()}-${current.length}`, name: '', logoUrl: '', websiteUrl: '', isActive: true }]);

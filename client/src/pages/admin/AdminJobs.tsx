@@ -1,6 +1,7 @@
 import { Briefcase, ClipboardList, Loader2, Plus, Users, X } from 'lucide-react';
 import { FormEvent, useEffect, useState } from 'react';
 import { api, Job } from '../../api/client';
+import ConfirmDialog from '../../components/ConfirmDialog';
 
 interface AdminJob extends Job { _count?: { applications: number }; }
 
@@ -11,6 +12,7 @@ export default function AdminJobs() {
   const [editing,  setEditing]  = useState<AdminJob | null>(null);
   const [toast,    setToast]    = useState('');
   const [tab, setTab]           = useState<'jobs' | 'apps'>('jobs');
+  const [deleting, setDeleting] = useState<AdminJob | null>(null);
   const applicationCount = jobs.reduce((total, job) => total + (job._count?.applications ?? 0), 0);
 
   const notify = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
@@ -63,11 +65,11 @@ export default function AdminJobs() {
     } catch (err) { notify(err instanceof Error ? err.message : 'Failed'); }
   };
 
-  const del = async (j: AdminJob) => {
-    if (!confirm(`Delete "${j.title}"?`)) return;
+  const del = async () => {
+    if (!deleting) return;
     try {
-      await api(`/admin/jobs/${j.id}`, { method: 'DELETE' });
-      notify('Job deleted'); load();
+      await api(`/admin/jobs/${deleting.id}`, { method: 'DELETE' });
+      notify('Job deleted'); setDeleting(null); load();
     } catch (err) { notify(err instanceof Error ? err.message : 'Failed'); }
   };
 
@@ -82,6 +84,7 @@ export default function AdminJobs() {
           <Plus size={15} /> Post a job
         </button>
       </div>
+      <ConfirmDialog open={deleting !== null} title="Delete this job?" message={`This will permanently remove “${deleting?.title ?? 'this vacancy'}” and its listing.`} confirmLabel="Delete job" onConfirm={del} onCancel={() => setDeleting(null)} />
 
       {/* Tabs */}
       <div className="jobs-tabs" role="tablist" aria-label="Jobs workspace">
@@ -201,7 +204,7 @@ export default function AdminJobs() {
                           <button className="tbl-btn" onClick={() => toggle(j)}>
                             {j.status === 'PUBLISHED' ? 'Unpublish' : 'Publish'}
                           </button>
-                          <button className="tbl-btn danger" onClick={() => del(j)}>Delete</button>
+                          <button className="tbl-btn danger" onClick={() => setDeleting(j)}>Delete</button>
                         </div>
                       </td>
                     </tr>

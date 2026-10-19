@@ -12,7 +12,8 @@ import { errorHandler } from './middleware/errorHandler.js';
 import routes from './routes/index.js';
 
 const app: express.Express = express();
-
+// Trust the local Nginx reverse proxy
+app.set('trust proxy', 'loopback');
 // ==================== Security headers ====================
 app.use(
   helmet({
