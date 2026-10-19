@@ -72,6 +72,7 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
   CUSTOMER: 0,
   SUPER_ADMIN: 100,
   ADMIN: 80,
+  OPERATIONS: 50,
   CONTENT_MANAGER: 60,
   EDITOR: 40,
   HR: 40,
@@ -122,6 +123,9 @@ export const ROLE_PERMISSIONS = {
     'media:read', 'media:write', 'media:delete',
     'faqs:read', 'faqs:write', 'faqs:delete',
     'locations:read',
+  ],
+  OPERATIONS: [
+    'orders:read', 'orders:write',
   ],
 } as const;
 

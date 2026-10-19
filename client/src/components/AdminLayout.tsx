@@ -7,19 +7,19 @@ import { useEffect, useRef, useState } from 'react';
 import { api, User } from '../api/client';
 
 const NAV = [
-  { icon: LayoutDashboard, label: 'Overview',   to: '/admin/dashboard' },
-  { icon: Package,         label: 'Products',   to: '/admin/products'  },
-  { icon: Package,         label: 'Services',   to: '/admin/services'  },
-  { icon: Image,           label: 'Media & Team', to: '/admin/media'   },
-  { icon: Globe,           label: 'Site Experience', to: '/admin/experience' },
-  { icon: MapPin,          label: 'Our Clients',  to: '/admin/locations' },
-  { icon: Package,         label: 'Orders',     to: '/admin/orders'    },
-  { icon: FileText,        label: 'News',        to: '/admin/news'      },
-  { icon: Briefcase,       label: 'Jobs',        to: '/admin/jobs'      },
-  { icon: MessageSquare,   label: 'Messages',    to: '/admin/messages'  },
-  { icon: Users,           label: 'Staff & users', to: '/admin/users'   },
-  { icon: BarChart3,       label: 'Audit Logs',  to: '/admin/audit'     },
-  { icon: Settings,        label: 'Settings',    to: '/admin/settings'  },
+  { icon: LayoutDashboard, label: 'Overview', to: '/admin/dashboard', roles: ['ADMIN', 'SUPER_ADMIN'] },
+  { icon: Package, label: 'Products', to: '/admin/products', roles: ['EDITOR', 'CONTENT_MANAGER', 'ADMIN', 'SUPER_ADMIN'] },
+  { icon: Package, label: 'Services', to: '/admin/services', roles: ['EDITOR', 'CONTENT_MANAGER', 'ADMIN', 'SUPER_ADMIN'] },
+  { icon: Image, label: 'Media & Team', to: '/admin/media', roles: ['EDITOR', 'CONTENT_MANAGER', 'ADMIN', 'SUPER_ADMIN', 'HR'] },
+  { icon: Globe, label: 'Site Experience', to: '/admin/experience', roles: ['ADMIN', 'SUPER_ADMIN'] },
+  { icon: MapPin, label: 'Our Clients', to: '/admin/locations', roles: ['EDITOR', 'CONTENT_MANAGER', 'ADMIN', 'SUPER_ADMIN'] },
+  { icon: Package, label: 'Orders', to: '/admin/orders', roles: ['OPERATIONS', 'ADMIN', 'SUPER_ADMIN'] },
+  { icon: FileText, label: 'News', to: '/admin/news', roles: ['EDITOR', 'CONTENT_MANAGER', 'ADMIN', 'SUPER_ADMIN'] },
+  { icon: Briefcase, label: 'Jobs', to: '/admin/jobs', roles: ['HR', 'ADMIN', 'SUPER_ADMIN'] },
+  { icon: MessageSquare, label: 'Messages', to: '/admin/messages', roles: ['ADMIN', 'SUPER_ADMIN'] },
+  { icon: Users, label: 'Staff & users', to: '/admin/users', roles: ['ADMIN', 'SUPER_ADMIN'] },
+  { icon: BarChart3, label: 'Audit Logs', to: '/admin/audit', roles: ['ADMIN', 'SUPER_ADMIN'] },
+  { icon: Settings, label: 'Settings', to: '/admin/settings', roles: ['ADMIN', 'SUPER_ADMIN'] },
 ];
 
 export default function AdminLayout({ user, onLogout }: { user: User; onLogout?: () => void }) {
@@ -71,7 +71,7 @@ export default function AdminLayout({ user, onLogout }: { user: User; onLogout?:
 
         <div className="admin-nav">
           <div className="admin-nav-lbl">Workspace</div>
-          {NAV.map(({ icon: Icon, label, to }) => (
+          {NAV.filter(item => item.roles.includes(profile.role)).map(({ icon: Icon, label, to }) => (
             <NavLink
               key={to}
               to={to}

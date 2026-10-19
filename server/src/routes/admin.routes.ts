@@ -116,8 +116,8 @@ router.use(requireAuth);
 
 // ==================== Dashboard ====================
 router.get('/dashboard', requireRole('ADMIN', 'SUPER_ADMIN'), getDashboard);
-router.get('/orders', requireRole('ADMIN', 'SUPER_ADMIN'), adminListOrders);
-router.put('/orders/:id', requireRole('ADMIN', 'SUPER_ADMIN'), validate(updateOrderSchema), adminUpdateOrder);
+router.get('/orders', requireRole('OPERATIONS', 'ADMIN', 'SUPER_ADMIN'), adminListOrders);
+router.put('/orders/:id', requireRole('OPERATIONS', 'ADMIN', 'SUPER_ADMIN'), validate(updateOrderSchema), adminUpdateOrder);
 
 // ==================== Users ====================
 router.get('/users', requireRole('ADMIN', 'SUPER_ADMIN'), listUsers);

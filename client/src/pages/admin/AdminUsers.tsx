@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { KeyRound, Pencil, Plus, ShieldCheck, Users } from 'lucide-react';
+import { KeyRound, Pencil, Plus, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { api } from '../../api/client';
 import ConfirmDialog from '../../components/ConfirmDialog';
 
@@ -8,7 +8,7 @@ type Account = {
   role: string; status: string; department?: string; phone?: string; lastLoginAt?: string;
 };
 
-const staffRoles = ['EDITOR', 'CONTENT_MANAGER', 'HR', 'ADMIN'];
+const staffRoles = ['EDITOR', 'CONTENT_MANAGER', 'HR', 'OPERATIONS', 'ADMIN'];
 const roleLabel = (role: string) => role.replace(/_/g, ' ');
 
 export default function AdminUsers() {
@@ -17,7 +17,7 @@ export default function AdminUsers() {
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const [editing, setEditing] = useState<Account | null>(null);
-  const [pendingAction, setPendingAction] = useState<{ account: Account; kind: 'status' | 'reset' } | null>(null);
+  const [pendingAction, setPendingAction] = useState<{ account: Account; kind: 'status' | 'reset' | 'delete' } | null>(null);
 
   const load = async () => {
     try {
@@ -66,6 +66,13 @@ export default function AdminUsers() {
     } catch (cause) { showError(cause, 'Unable to reset password.'); }
   };
 
+  const remove = async (id: string) => {
+    try {
+      const result = await api(`/admin/users/${id}`, { method: 'DELETE' });
+      message(result.message ?? 'Account deleted.'); await load();
+    } catch (cause) { showError(cause, 'Unable to delete this account.'); }
+  };
+
   const update = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!editing) return;
@@ -102,7 +109,7 @@ export default function AdminUsers() {
         <label>First name<input required name="firstName" /></label><label>Last name<input required name="lastName" /></label>
         <label>Email<input required type="email" name="email" /></label><label>Username<input required name="username" /></label>
         <label>Department<input name="department" placeholder="e.g. Operations" /></label>
-        <label>Role<select name="role">{staffRoles.map(role => <option key={role} value={role}>{roleLabel(role)}</option>)}</select></label>
+        <label>Role<select name="role">{staffRoles.map(role => <option key={role} value={role}>{roleLabel(role)}</option>)}</select><small>Operations grants order and fulfilment access without full administration.</small></label>
         <label>Temporary password <small>(optional)</small><input name="password" type="password" minLength={8} /></label>
       </div>
       <div className="admin-form-actions"><button type="button" className="btn btn-outline" onClick={() => setShowForm(false)}>Cancel</button><button className="btn btn-dark">Create account</button></div>
@@ -132,10 +139,11 @@ export default function AdminUsers() {
             {account.role !== 'SUPER_ADMIN' && <button className="tact" onClick={() => setPendingAction({ account, kind: 'status' })}><ShieldCheck size={13} />{account.status === 'ACTIVE' ? 'Suspend' : 'Activate'}</button>}
             <button className="tact" onClick={() => setEditing(account)}><KeyRound size={13} /> Password</button>
             <button className="tact" onClick={() => setPendingAction({ account, kind: 'reset' })}><KeyRound size={13} /> Reset</button>
+            {account.role !== 'SUPER_ADMIN' && <button className="tact danger" onClick={() => setPendingAction({ account, kind: 'delete' })}><Trash2 size={13} /> Delete</button>}
           </div></td>
         </tr>)}{!rows.length && <tr><td colSpan={6}>No accounts found.</td></tr>}</tbody>
       </table></div>
     </section>
-    <ConfirmDialog open={Boolean(pendingAction)} title={pendingAction?.kind === 'reset' ? 'Reset account password?' : `${pendingAction?.account.status === 'ACTIVE' ? 'Suspend' : 'Activate'} this account?`} message={pendingAction?.kind === 'reset' ? `A new temporary password will be generated for ${pendingAction?.account.email}.` : pendingAction?.account.status === 'ACTIVE' ? `${pendingAction?.account.email} will no longer be able to sign in or place orders.` : `${pendingAction?.account.email} will be able to sign in again.`} confirmLabel={pendingAction?.kind === 'reset' ? 'Reset password' : pendingAction?.account.status === 'ACTIVE' ? 'Suspend account' : 'Activate account'} onCancel={() => setPendingAction(null)} onConfirm={() => { const action = pendingAction; setPendingAction(null); if (action?.kind === 'reset') void reset(action.account.id); else if (action) void changeStatus(action.account); }} />
+    <ConfirmDialog open={Boolean(pendingAction)} title={pendingAction?.kind === 'reset' ? 'Reset account password?' : pendingAction?.kind === 'delete' ? 'Delete this account?' : `${pendingAction?.account.status === 'ACTIVE' ? 'Suspend' : 'Activate'} this account?`} message={pendingAction?.kind === 'reset' ? `A new temporary password will be generated for ${pendingAction?.account.email}.` : pendingAction?.kind === 'delete' ? `${pendingAction?.account.email} will be permanently removed. This cannot be undone.` : pendingAction?.account.status === 'ACTIVE' ? `${pendingAction?.account.email} will no longer be able to sign in or place orders.` : `${pendingAction?.account.email} will be able to sign in again.`} confirmLabel={pendingAction?.kind === 'reset' ? 'Reset password' : pendingAction?.kind === 'delete' ? 'Delete account' : pendingAction?.account.status === 'ACTIVE' ? 'Suspend account' : 'Activate account'} onCancel={() => setPendingAction(null)} onConfirm={() => { const action = pendingAction; setPendingAction(null); if (action?.kind === 'reset') void reset(action.account.id); else if (action?.kind === 'delete') void remove(action.account.id); else if (action) void changeStatus(action.account); }} />
   </div>;
 }

@@ -19,6 +19,7 @@ enum UserRole {
   EDITOR
   HR
   CONTENT_MANAGER
+  OPERATIONS
 }
 
 enum OrderStatus {
