@@ -1,6 +1,6 @@
 import {
   BarChart3, Briefcase, FileText, Globe, LayoutDashboard,
-  Image, LogOut, MapPin, MessageSquare, Package, Settings, Users, Upload,
+  Image, LogOut, MapPin, MessageSquare, Package, Settings, Users, Upload, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
@@ -28,6 +28,7 @@ export default function AdminLayout({ user, onLogout }: { user: User; onLogout?:
   const [profileError, setProfileError] = useState('');
   const profileInput = useRef<HTMLInputElement>(null);
   const [newApplications, setNewApplications] = useState(0);
+  const [navCollapsed, setNavCollapsed] = useState(() => localStorage.getItem('natgas-admin-nav-collapsed') === 'true');
 
   useEffect(() => {
     const refreshApplications = () => api<{ counts?: { applications?: { new?: number } } }>('/admin/dashboard')
@@ -43,6 +44,11 @@ export default function AdminLayout({ user, onLogout }: { user: User; onLogout?:
     onLogout?.();
     navigate('/admin/login');
   };
+  const toggleNav = () => setNavCollapsed(current => {
+    const next = !current;
+    localStorage.setItem('natgas-admin-nav-collapsed', String(next));
+    return next;
+  });
 
   const uploadProfilePhoto = async (file: File) => {
     setProfileError('');
@@ -55,7 +61,7 @@ export default function AdminLayout({ user, onLogout }: { user: User; onLogout?:
   };
 
   return (
-    <div className="admin-wrap">
+    <div className={`admin-wrap${navCollapsed ? ' nav-collapsed' : ''}`}>
       {/* ── Sidebar ── */}
       <aside className="admin-sidebar">
         <div className="admin-logo">
@@ -67,11 +73,14 @@ export default function AdminLayout({ user, onLogout }: { user: User; onLogout?:
           <div className="admin-logo-text">
             NATGAS <small>ADMIN</small>
           </div>
+          <button type="button" className="admin-nav-toggle" onClick={toggleNav} aria-label={navCollapsed ? 'Expand admin navigation' : 'Collapse admin navigation'} title={navCollapsed ? 'Expand navigation' : 'Collapse navigation'}>
+            {navCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+          </button>
         </div>
 
         <div className="admin-nav">
           <div className="admin-nav-lbl">Workspace</div>
-          {NAV.filter(item => item.roles.includes(profile.role)).map(({ icon: Icon, label, to }) => (
+          {NAV.filter(item => (profile.roles ?? [profile.role]).some(role => item.roles.includes(role))).map(({ icon: Icon, label, to }) => (
             <NavLink
               key={to}
               to={to}
@@ -103,7 +112,7 @@ export default function AdminLayout({ user, onLogout }: { user: User; onLogout?:
           <h2>Natgas Uganda — Content Management</h2>
           <div className="admin-top-r">
             <span style={{ fontSize: 12, color: 'var(--muted)', textTransform: 'capitalize' }}>
-              {profile.role.replace(/_/g, ' ').toLowerCase()}
+              {(profile.roles?.length ? profile.roles : [profile.role]).map(role => role.replace(/_/g, ' ').toLowerCase()).join(' · ')}
             </span>
             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--green)' }}>
               {profile.firstName} {profile.lastName}

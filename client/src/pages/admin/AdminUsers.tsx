@@ -5,7 +5,7 @@ import ConfirmDialog from '../../components/ConfirmDialog';
 
 type Account = {
   id: string; firstName: string; lastName: string; email: string; username: string;
-  role: string; status: string; department?: string; phone?: string; lastLoginAt?: string;
+  role: string; roles?: string[]; status: string; department?: string; phone?: string; lastLoginAt?: string;
 };
 
 const staffRoles = ['EDITOR', 'CONTENT_MANAGER', 'HR', 'OPERATIONS', 'ADMIN'];
@@ -18,6 +18,8 @@ export default function AdminUsers() {
   const [error, setError] = useState('');
   const [editing, setEditing] = useState<Account | null>(null);
   const [pendingAction, setPendingAction] = useState<{ account: Account; kind: 'status' | 'reset' | 'delete' } | null>(null);
+  const [currentRole, setCurrentRole] = useState('');
+  const [editingRoles, setEditingRoles] = useState<string[]>([]);
 
   const load = async () => {
     try {
@@ -27,7 +29,8 @@ export default function AdminUsers() {
       setError(cause instanceof Error ? cause.message : 'Unable to load accounts.');
     }
   };
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); api<{ role: string }>('/auth/me').then(result => setCurrentRole(result.data.role)).catch(() => undefined); }, []);
+  const assignableRoles = currentRole === 'SUPER_ADMIN' ? [...staffRoles, 'SUPER_ADMIN'] : staffRoles;
 
   const message = (text: string) => {
     setNotice(text);
@@ -37,7 +40,10 @@ export default function AdminUsers() {
 
   const create = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); setError('');
-    const values = Object.fromEntries(new FormData(event.currentTarget));
+    const form = new FormData(event.currentTarget);
+    const values = Object.fromEntries(form) as Record<string, unknown>;
+    values.roles = form.getAll('roles');
+    delete values.role;
     try {
       const result = await api('/admin/users', { method: 'POST', body: JSON.stringify(values) });
       message(result.message ?? 'Staff account created.'); setShowForm(false); await load();
@@ -49,6 +55,13 @@ export default function AdminUsers() {
       const result = await api(`/admin/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role }) });
       message(result.message ?? 'Role updated.'); await load();
     } catch (cause) { showError(cause, 'Unable to update role.'); }
+  };
+
+  const changeRoles = async (id: string, roles: string[]) => {
+    try {
+      const result = await api(`/admin/users/${id}/roles`, { method: 'PUT', body: JSON.stringify({ roles }) });
+      message(result.message ?? 'Roles updated.'); await load();
+    } catch (cause) { showError(cause, 'Unable to update roles.'); }
   };
 
   const changeStatus = async (account: Account) => {
@@ -83,6 +96,7 @@ export default function AdminUsers() {
     try {
       await api(`/admin/users/${editing.id}`, { method: 'PUT', body: JSON.stringify(fields) });
       if (password) await api(`/admin/users/${editing.id}/password`, { method: 'PUT', body: JSON.stringify({ password }) });
+      if (editing.role !== 'CUSTOMER' && editingRoles.length) await api(`/admin/users/${editing.id}/roles`, { method: 'PUT', body: JSON.stringify({ roles: editingRoles }) });
       message(password ? 'Account details and temporary password updated.' : 'Account details updated.');
       setEditing(null); await load();
     } catch (cause) { showError(cause, 'Unable to update this account.'); }
@@ -109,7 +123,7 @@ export default function AdminUsers() {
         <label>First name<input required name="firstName" /></label><label>Last name<input required name="lastName" /></label>
         <label>Email<input required type="email" name="email" /></label><label>Username<input required name="username" /></label>
         <label>Department<input name="department" placeholder="e.g. Operations" /></label>
-        <label>Role<select name="role">{staffRoles.map(role => <option key={role} value={role}>{roleLabel(role)}</option>)}</select><small>Operations grants order and fulfilment access without full administration.</small></label>
+        <label>Access roles<select name="roles" multiple defaultValue={['EDITOR']}>{assignableRoles.map(role => <option key={role} value={role}>{roleLabel(role)}</option>)}</select><small>Select one or more roles (hold Ctrl/Cmd for multiple).</small></label>
         <label>Temporary password <small>(optional)</small><input name="password" type="password" minLength={8} /></label>
       </div>
       <div className="admin-form-actions"><button type="button" className="btn btn-outline" onClick={() => setShowForm(false)}>Cancel</button><button className="btn btn-dark">Create account</button></div>
@@ -122,22 +136,23 @@ export default function AdminUsers() {
         <label>Email<input required type="email" name="email" defaultValue={editing.email} /></label><label>Username<input required name="username" defaultValue={editing.username} /></label>
         <label>Phone number<input name="phone" defaultValue={editing.phone ?? ''} /></label><label>Department<input name="department" defaultValue={editing.department ?? ''} disabled={editing.role === 'CUSTOMER'} /></label>
         <label>New temporary password <small>(leave blank to keep current)</small><input name="password" type="password" minLength={8} placeholder="Uppercase, lowercase, number & symbol" /></label>
+        {editing.role !== 'CUSTOMER' && <label className="role-multi-field">Access roles <select multiple value={editingRoles} onChange={event => setEditingRoles(Array.from(event.target.selectedOptions, option => option.value))}>{assignableRoles.map(role => <option key={role} value={role}>{roleLabel(role)}</option>)}</select><small>Hold Ctrl/Cmd to select several roles.</small></label>}
       </div>
-      <div className="admin-form-actions"><button type="button" className="btn btn-outline" onClick={() => setEditing(null)}>Cancel</button><button className="btn btn-primary">Save account</button></div>
+      <div className="admin-form-actions"><button type="button" className="btn btn-outline" onClick={() => setEditing(null)}>Cancel</button><button className="btn btn-primary">Save account</button>{editing.role !== 'CUSTOMER' && <button type="button" className="btn btn-dark" onClick={() => void changeRoles(editing.id, editingRoles)}>Save roles</button>}</div>
     </form>}
     <section className="admin-card">
       <div className="admin-card-head"><h3><Users size={16} /> All accounts</h3><span>{accounts.length} total</span></div>
       <div className="table-scroll"><table className="data-table"><thead><tr><th>Account</th><th>Access</th><th>Department / phone</th><th>Status</th><th>Last login</th><th>Actions</th></tr></thead>
         <tbody>{rows.map(account => <tr key={account.id}>
           <td><b>{account.firstName} {account.lastName}</b><small>{account.email}</small></td>
-          <td>{account.role === 'SUPER_ADMIN' ? 'SUPER ADMIN' : account.role === 'CUSTOMER' ? 'CUSTOMER' : <select className="table-select" value={account.role} onChange={event => changeRole(account.id, event.target.value)}>{staffRoles.map(role => <option key={role} value={role}>{roleLabel(role)}</option>)}</select>}</td>
+          <td>{account.role === 'CUSTOMER' ? 'CUSTOMER' : <><select className="table-select" value={account.role} onChange={event => changeRole(account.id, event.target.value)} disabled={account.role === 'SUPER_ADMIN' && currentRole !== 'SUPER_ADMIN'}>{assignableRoles.map(role => <option key={role} value={role}>{roleLabel(role)}</option>)}</select><small className="role-summary">{(account.roles ?? [account.role]).map(roleLabel).join(' · ')}</small></>}</td>
           <td>{account.role === 'CUSTOMER' ? account.phone || '—' : account.department || '—'}</td>
           <td><span className={`status-pill ${account.status.toLowerCase()}`}>{account.status}</span></td>
           <td>{account.lastLoginAt ? new Date(account.lastLoginAt).toLocaleDateString() : 'Never'}</td>
           <td><div className="staff-actions">
-            <button className="tact" onClick={() => setEditing(account)}><Pencil size={13} /> Edit</button>
+            <button className="tact" onClick={() => { setEditing(account); setEditingRoles(account.roles ?? [account.role]); }}><Pencil size={13} /> Edit</button>
             {account.role !== 'SUPER_ADMIN' && <button className="tact" onClick={() => setPendingAction({ account, kind: 'status' })}><ShieldCheck size={13} />{account.status === 'ACTIVE' ? 'Suspend' : 'Activate'}</button>}
-            <button className="tact" onClick={() => setEditing(account)}><KeyRound size={13} /> Password</button>
+            <button className="tact" onClick={() => { setEditing(account); setEditingRoles(account.roles ?? [account.role]); }}><KeyRound size={13} /> Password</button>
             <button className="tact" onClick={() => setPendingAction({ account, kind: 'reset' })}><KeyRound size={13} /> Reset</button>
             {account.role !== 'SUPER_ADMIN' && <button className="tact danger" onClick={() => setPendingAction({ account, kind: 'delete' })}><Trash2 size={13} /> Delete</button>}
           </div></td>

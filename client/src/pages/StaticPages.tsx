@@ -32,6 +32,7 @@ export function About() {
       } catch { setPartners([]); }
     }).catch(() => undefined);
   }, []);
+  const uniquePartners = partners.filter((partner, index, all) => all.findIndex(item => item.name.toLowerCase() === partner.name.toLowerCase()) === index);
   return (
     <>
       <div className="page-hero">
@@ -124,9 +125,10 @@ export function About() {
           </div>
           <div className="partners-marquee partners-grid-static" aria-label="Industrial partners">
             <div className="partners-track">
-              {partners.filter((partner, index, all) => all.findIndex(item => item.name.trim().toLowerCase() === partner.name.trim().toLowerCase()) === index).map((partner, index) => {
+              {[...uniquePartners, ...uniquePartners].map((partner, index) => {
                 const mark = <div className="partner-mark">{partner.logoUrl ? <img src={partner.logoUrl} alt={partner.name} loading="lazy" /> : partner.name}</div>;
-                return partner.websiteUrl ? <a href={partner.websiteUrl} target="_blank" rel="noreferrer" key={`${partner.name}-${index}`}>{mark}</a> : <div key={`${partner.name}-${index}`}>{mark}</div>;
+                const key = `${partner.name}-${index}`;
+                return partner.websiteUrl ? <a href={partner.websiteUrl} target="_blank" rel="noreferrer" key={key} aria-hidden={index >= uniquePartners.length}>{mark}</a> : <div key={key} aria-hidden={index >= uniquePartners.length}>{mark}</div>;
               })}
             </div>
           </div>

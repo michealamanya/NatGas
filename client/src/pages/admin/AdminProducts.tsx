@@ -24,7 +24,8 @@ export default function AdminProducts() {
   const [existingGallery, setExistingGallery] = useState<string[]>([]);
   const [galleryFiles, setGalleryFiles] = useState<{ file: File; preview: string }[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
-  const [confirmAction, setConfirmAction] = useState<{ kind: 'product' | 'category'; product?: AdminProduct; category?: ProductCategory } | null>(null);
+  const [showTrash, setShowTrash] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{ kind: 'product' | 'category' | 'permanent'; product?: AdminProduct; category?: ProductCategory } | null>(null);
 
   const notify = (msg: string, type: 'success'|'error' = 'success') => {
     setToast({ msg, type });
@@ -173,6 +174,18 @@ export default function AdminProducts() {
     }
   };
 
+  const restore = async (product: AdminProduct) => {
+    try { await api(`/admin/products/${product.id}/publish`, { method: 'PUT', body: JSON.stringify({ status: 'DRAFT' }) }); notify('Product restored to drafts.'); load(); }
+    catch (err) { notify(err instanceof Error ? err.message : 'Could not restore product.', 'error'); }
+  };
+
+  const permanentlyDelete = async () => {
+    const product = confirmAction?.product;
+    if (!product) return;
+    try { await api(`/admin/products/${product.id}/permanent`, { method: 'DELETE' }); notify('Product permanently deleted.'); setConfirmAction(null); load(); }
+    catch (err) { notify(err instanceof Error ? err.message : 'Could not permanently delete product.', 'error'); }
+  };
+
   const createCategory = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = Object.fromEntries(new FormData(event.currentTarget));
@@ -191,7 +204,7 @@ export default function AdminProducts() {
 
   return (
     <>
-      <ConfirmDialog open={confirmAction !== null} title={confirmAction?.kind === 'category' ? 'Remove this category?' : 'Archive this product?'} message={confirmAction?.kind === 'category' ? `Products in “${confirmAction.category?.name}” will remain in the catalogue but become uncategorised.` : `“${confirmAction?.product?.name ?? 'This product'}” will be archived and removed from the public catalogue.`} confirmLabel={confirmAction?.kind === 'category' ? 'Remove category' : 'Archive product'} onConfirm={confirmAction?.kind === 'category' ? removeCategory : archive} onCancel={() => setConfirmAction(null)} />
+      <ConfirmDialog open={confirmAction !== null} title={confirmAction?.kind === 'category' ? 'Remove this category?' : confirmAction?.kind === 'permanent' ? 'Delete permanently?' : 'Archive this product?'} message={confirmAction?.kind === 'category' ? `Products in “${confirmAction.category?.name}” will remain in the catalogue but become uncategorised.` : confirmAction?.kind === 'permanent' ? `“${confirmAction?.product?.name ?? 'This product'}” will be permanently deleted. This cannot be undone.` : `“${confirmAction?.product?.name ?? 'This product'}” will be archived and removed from the public catalogue.`} confirmLabel={confirmAction?.kind === 'category' ? 'Remove category' : confirmAction?.kind === 'permanent' ? 'Delete permanently' : 'Archive product'} onConfirm={confirmAction?.kind === 'category' ? removeCategory : confirmAction?.kind === 'permanent' ? permanentlyDelete : archive} onCancel={() => setConfirmAction(null)} />
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom: 24 }}>
         <div>
           <h1 className="admin-page-title">Products</h1>
@@ -344,9 +357,10 @@ export default function AdminProducts() {
       )}
 
       {/* Table */}
+      <div className="admin-tabs" style={{ marginBottom: 16 }}><button className={!showTrash ? 'active' : ''} onClick={() => setShowTrash(false)}>Active catalogue</button><button className={showTrash ? 'active' : ''} onClick={() => setShowTrash(true)}>Trash ({products.filter(product => product.status === 'ARCHIVED').length})</button></div>
       <div className="admin-card">
         <div className="admin-card-header">
-          <h3>All products ({products.length})</h3>
+          <h3>{showTrash ? 'Trash' : 'All products'} ({products.filter(product => showTrash ? product.status === 'ARCHIVED' : product.status !== 'ARCHIVED').length})</h3>
         </div>
         {loading ? (
           <div className="loading-state"><Loader2 size={22} className="spin" /></div>
@@ -357,7 +371,7 @@ export default function AdminProducts() {
                 <tr><th>Product</th><th>Category</th><th>Size / specification</th><th>Status</th><th>Stock</th><th>Featured</th><th>Actions</th></tr>
               </thead>
               <tbody>
-                {products.map(p => (
+                {products.filter(p => showTrash ? p.status === 'ARCHIVED' : p.status !== 'ARCHIVED').map(p => (
                   <tr key={p.id}>
                     <td>
                       <div style={{ display:'flex', alignItems:'center', gap: 10 }}>
@@ -373,12 +387,7 @@ export default function AdminProducts() {
                     <td>
                       <div className="actions">
                         <button className="tbl-btn" onClick={() => openEdit(p)}>Edit</button>
-                        <button className="tbl-btn" onClick={() => togglePublish(p)}>
-                          {p.status === 'PUBLISHED' ? 'Unpublish' : 'Publish'}
-                        </button>
-                        <button className="tbl-btn danger" onClick={() => setConfirmAction({ kind:'product', product:p })}>
-                          <Trash2 size={13} />
-                        </button>
+                        {showTrash ? <><button className="tbl-btn" onClick={() => restore(p)}>Restore</button><button className="tbl-btn danger" onClick={() => setConfirmAction({ kind:'permanent', product:p })}>Delete permanently</button></> : <><button className="tbl-btn" onClick={() => togglePublish(p)}>{p.status === 'PUBLISHED' ? 'Unpublish' : 'Publish'}</button><button className="tbl-btn danger" onClick={() => setConfirmAction({ kind:'product', product:p })}><Trash2 size={13} /></button></>}
                       </div>
                     </td>
                   </tr>

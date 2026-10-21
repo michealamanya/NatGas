@@ -87,9 +87,7 @@ export async function createSession(
 export async function validateSession(token: string): Promise<SafeUser | null> {
   const session = await prisma.session.findUnique({
     where: { token },
-    include: {
-      user: true,
-    },
+    include: { user: { include: { roleAssignments: true } } },
   });
 
   if (!session) return null;
@@ -217,7 +215,7 @@ export function isAccountLocked(user: Pick<User, 'lockedUntil'>): boolean {
 
 // ==================== HELPERS ====================
 
-export function toSafeUser(u: User): SafeUser {
+export function toSafeUser(u: User & { roleAssignments?: Array<{ role: User['role'] }> }): SafeUser {
   return {
     id: u.id,
     email: u.email,
@@ -225,6 +223,7 @@ export function toSafeUser(u: User): SafeUser {
     firstName: u.firstName,
     lastName: u.lastName,
     role: u.role,
+    roles: Array.from(new Set([u.role, ...(u.roleAssignments ?? []).map((assignment) => assignment.role)])),
     status: u.status,
     avatarUrl: u.avatarUrl,
   };

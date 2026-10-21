@@ -3,7 +3,7 @@ import { AuthenticatedRequest, SafeUser } from '../types/index.js';
 import { AuthenticationError, AuthorizationError } from '../utils/errors.js';
 import { validateSession } from '../services/auth.service.js';
 import { UserRole } from '@prisma/client';
-import { ROLE_HIERARCHY } from '../types/index.js';
+import { getUserRoles, ROLE_HIERARCHY } from '../types/index.js';
 
 /**
  * Core session validation - extracts token from cookie and validates it.
@@ -50,10 +50,9 @@ export function requireRole(...roles: UserRole[]) {
     req.user = result.user;
     req.sessionToken = result.token;
 
-    const userRoleLevel = ROLE_HIERARCHY[req.user!.role];
+    const userRoles = getUserRoles(req.user!);
     const hasRole = roles.some((role) => {
-      // User satisfies if their level >= any required role level
-      return userRoleLevel >= ROLE_HIERARCHY[role];
+      return userRoles.some((userRole) => ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[role]);
     });
 
     if (!hasRole) {

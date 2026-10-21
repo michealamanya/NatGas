@@ -10,6 +10,7 @@ import {
   createProduct,
   updateProduct,
   archiveProduct,
+  permanentlyDeleteProduct,
   toggleProductPublish,
   createProductCategory,
   updateProductCategory,
@@ -83,6 +84,7 @@ import {
   updateUser,
   updateUserStatus,
   updateUserRole,
+  updateUserRoles,
   adminResetPassword,
   adminSetPassword,
   deleteUser,
@@ -99,7 +101,7 @@ import {
 import { createNewsArticleSchema, updateNewsArticleSchema } from '../validation/news.schemas.js';
 import { createJobSchema, updateJobSchema, updateApplicationStatusSchema } from '../validation/job.schemas.js';
 import { updateContactStatusSchema } from '../validation/contact.schemas.js';
-import { createUserSchema, updateUserSchema, updateUserStatusSchema, updateUserRoleSchema, adminSetPasswordSchema } from '../validation/user.schemas.js';
+import { createUserSchema, updateUserSchema, updateUserStatusSchema, updateUserRoleSchema, updateUserRolesSchema, adminSetPasswordSchema } from '../validation/user.schemas.js';
 import { adminListOrders, adminUpdateOrder } from '../controllers/orders.controller.js';
 import { updateOrderSchema } from '../validation/order.schemas.js';
 
@@ -126,6 +128,7 @@ router.get('/users/:id', requireRole('ADMIN', 'SUPER_ADMIN'), getUserById);
 router.put('/users/:id', requireRole('ADMIN', 'SUPER_ADMIN'), validate(updateUserSchema), updateUser);
 router.put('/users/:id/status', requireRole('ADMIN', 'SUPER_ADMIN'), validate(updateUserStatusSchema), updateUserStatus);
 router.put('/users/:id/role', requireRole('ADMIN', 'SUPER_ADMIN'), validate(updateUserRoleSchema), updateUserRole);
+router.put('/users/:id/roles', requireRole('ADMIN', 'SUPER_ADMIN'), validate(updateUserRolesSchema), updateUserRoles);
 router.post('/users/:id/reset-password', requireRole('ADMIN', 'SUPER_ADMIN'), adminResetPassword);
 router.put('/users/:id/password', requireRole('ADMIN', 'SUPER_ADMIN'), validate(adminSetPasswordSchema), adminSetPassword);
 router.delete('/users/:id', requireRole('SUPER_ADMIN'), deleteUser);
@@ -135,6 +138,7 @@ router.get('/products', requireRole('EDITOR', 'CONTENT_MANAGER', 'ADMIN', 'SUPER
 router.post('/products', requireRole('EDITOR', 'CONTENT_MANAGER', 'ADMIN', 'SUPER_ADMIN'), validate(createProductSchema), createProduct);
 router.put('/products/:id', requireRole('EDITOR', 'CONTENT_MANAGER', 'ADMIN', 'SUPER_ADMIN'), validate(updateProductSchema), updateProduct);
 router.delete('/products/:id', requireRole('EDITOR', 'CONTENT_MANAGER', 'ADMIN', 'SUPER_ADMIN'), archiveProduct);
+router.delete('/products/:id/permanent', requireRole('SUPER_ADMIN'), permanentlyDeleteProduct);
 router.put('/products/:id/publish', requireRole('EDITOR', 'CONTENT_MANAGER', 'ADMIN', 'SUPER_ADMIN'), validate(publishProductSchema), toggleProductPublish);
 
 // Product Categories

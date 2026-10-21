@@ -43,7 +43,7 @@ export async function login(req: Request, res: Response): Promise<void> {
   const ip = getClientIp(req);
   const userAgent = req.headers['user-agent'];
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({ where: { email }, include: { roleAssignments: true } });
   if (!user) {
     // Generic message to avoid user enumeration
     res.status(401).json(errorResponse('Invalid email or password'));

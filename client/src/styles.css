@@ -598,6 +598,13 @@ body {
 .admin-wrap { display:grid; grid-template-columns:230px 1fr; min-height:100vh; background:#f4f4f4; }
 .admin-sidebar { background:#061e1b; display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto; }
 .admin-logo { padding:18px 16px 28px; border-bottom:1px solid rgba(255,255,255,.06); display:flex; align-items:center; gap:10px; }
+.admin-nav-toggle { margin-left:auto; display:grid; place-items:center; width:28px; height:28px; border:1px solid rgba(255,255,255,.14); border-radius:6px; background:transparent; color:#9bcfc3; cursor:pointer; }
+.admin-nav-toggle:hover { color:#fff; background:rgba(255,255,255,.08); }
+.admin-wrap.nav-collapsed { grid-template-columns:76px 1fr; }
+.admin-wrap.nav-collapsed .admin-logo { justify-content:center; padding-inline:10px; }
+.admin-wrap.nav-collapsed .admin-logo-text, .admin-wrap.nav-collapsed .admin-nav-lbl, .admin-wrap.nav-collapsed .anav-link span, .admin-wrap.nav-collapsed .admin-nav-badge { display:none; }
+.admin-wrap.nav-collapsed .admin-nav-toggle { margin-left:0; }
+.admin-wrap.nav-collapsed .anav-link { justify-content:center; padding-inline:0; }
 .admin-logo-mark { width:30px; height:30px; background:var(--gold); border-radius:5px; display:grid; place-items:center; font-weight:800; font-size:15px; color:#1a0e00; }
 .admin-logo-text { font-size:14px; font-weight:800; color:#fff; }
 .admin-logo-text small { display:block; font-size:8px; letter-spacing:1.5px; color:var(--gold-2); font-weight:600; }
@@ -1068,7 +1075,8 @@ body { background:#f7f8f7; }
 .not-found-actions .btn { font-size:14px; }
 .btn-primary { background:var(--gold); color:#1b120d; }
 .btn-primary:hover, .btn-dark:hover, .btn-outline:hover { background:var(--gold); border-color:var(--gold); color:#1b120d; }
-.partners-grid-static .partners-track { width:100%; display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); animation:none; }
+.partners-grid-static .partners-track { width:max-content; display:flex; animation:partners-scroll 30s linear infinite; }
+.partners-grid-static:hover .partners-track { animation-play-state:paused; }
 .partners-grid-static .partners-track > a, .partners-grid-static .partners-track > div { flex:none; width:auto; }
 .partners-grid-static .partner-mark { min-height:92px; }
 @media (max-width:640px) {

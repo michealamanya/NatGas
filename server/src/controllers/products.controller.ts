@@ -6,7 +6,7 @@ import {
   parsePagination,
   buildPaginationMeta,
 } from '../types/index.js';
-import { NotFoundError, ConflictError } from '../utils/errors.js';
+import { NotFoundError, ConflictError, AppError } from '../utils/errors.js';
 import { createAuditLog } from '../services/audit.service.js';
 import { createSlug, createUniqueSlug } from '../utils/slug.js';
 import { Prisma } from '@prisma/client';
@@ -208,6 +208,17 @@ export async function archiveProduct(req: AuthenticatedRequest, res: Response): 
   });
 
   res.status(200).json(successResponse(null, 'Product archived'));
+}
+
+// Permanent deletion is restricted to the Super Administrator and is only
+// allowed when the product has never been used in an order.
+export async function permanentlyDeleteProduct(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const existing = await prisma.product.findUnique({ where: { id: req.params.id }, include: { _count: { select: { orderItems: true } } } });
+  if (!existing) throw new NotFoundError('Product');
+  if (existing._count.orderItems > 0) throw new AppError('This product is part of order history and can only be restored or archived.', 409);
+  await prisma.product.delete({ where: { id: req.params.id } });
+  await createAuditLog({ userId: req.user!.id, action: 'DELETE_PRODUCT_PERMANENTLY', resource: 'products', resourceId: req.params.id, ipAddress: (req.headers['x-forwarded-for'] as string) || req.ip, userAgent: req.headers['user-agent'] });
+  res.status(200).json(successResponse(null, 'Product permanently deleted'));
 }
 
 // PUT /api/admin/products/:id/publish

@@ -13,6 +13,7 @@ export interface SafeUser {
   firstName: string;
   lastName: string;
   role: UserRole;
+  roles?: UserRole[];
   status: string;
   avatarUrl?: string | null;
 }
@@ -129,8 +130,15 @@ export const ROLE_PERMISSIONS = {
   ],
 } as const;
 
-export function hasPermission(role: UserRole, permission: string): boolean {
-  if (role === 'SUPER_ADMIN') return true;
-  const permissions = ROLE_PERMISSIONS[role] as readonly string[];
-  return permissions.includes(permission) || permissions.includes('*');
+export function hasPermission(role: UserRole | UserRole[], permission: string): boolean {
+  const roles = Array.isArray(role) ? role : [role];
+  return roles.some((assignedRole) => {
+    if (assignedRole === 'SUPER_ADMIN') return true;
+    const permissions = ROLE_PERMISSIONS[assignedRole] as readonly string[];
+    return permissions.includes(permission) || permissions.includes('*');
+  });
+}
+
+export function getUserRoles(user: Pick<SafeUser, 'role' | 'roles'>): UserRole[] {
+  return Array.from(new Set([user.role, ...(user.roles ?? [])]));
 }

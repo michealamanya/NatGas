@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { prisma } from '../database/client.js';
 import {
   AuthenticatedRequest,
+  getUserRoles,
   successResponse,
   parsePagination,
   buildPaginationMeta,
@@ -13,9 +14,7 @@ import {
 } from '../services/auth.service.js';
 import { sendWelcomeEmail } from '../services/email.service.js';
 import { createAuditLog } from '../services/audit.service.js';
-import { Prisma } from '@prisma/client';
-type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'HR' | 'CONTENT_MANAGER' | 'CUSTOMER';
-type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING';
+import { Prisma, UserRole, UserStatus } from '@prisma/client';
 import crypto from 'crypto';
 
 function getIp(req: AuthenticatedRequest): string {
@@ -50,6 +49,7 @@ export async function listUsers(req: AuthenticatedRequest, res: Response): Promi
         firstName: true,
         lastName: true,
         role: true,
+        roleAssignments: { select: { role: true } },
         status: true,
         avatarUrl: true,
         phone: true,
@@ -63,18 +63,23 @@ export async function listUsers(req: AuthenticatedRequest, res: Response): Promi
     }),
   ]);
 
-  res.status(200).json(successResponse(users, undefined, buildPaginationMeta(total, pagination)));
+  const accounts = users.map(({ roleAssignments, ...user }) => ({
+    ...user,
+    roles: Array.from(new Set([user.role, ...roleAssignments.map((assignment) => assignment.role)])),
+  }));
+  res.status(200).json(successResponse(accounts, undefined, buildPaginationMeta(total, pagination)));
 }
 
 // POST /api/users
 export async function createUser(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const { email, username, firstName, lastName, role, phone, department, password, sendWelcomeEmailFlag } =
+  const { email, username, firstName, lastName, role, roles, phone, department, password, sendWelcomeEmailFlag } =
     req.body as {
       email: string;
       username: string;
       firstName: string;
       lastName: string;
       role?: UserRole;
+      roles?: UserRole[];
       phone?: string;
       department?: string;
       password?: string;
@@ -94,24 +99,31 @@ export async function createUser(req: AuthenticatedRequest, res: Response): Prom
 
   const tempPassword = password ?? crypto.randomBytes(12).toString('base64url');
   // ADMINs can administer website staff, but cannot create a second SUPER_ADMIN.
-  if (req.user!.role === 'ADMIN' && role === 'SUPER_ADMIN') {
+  const assignedRoles: UserRole[] = Array.from(new Set<UserRole>(roles?.length ? roles : [role ?? 'EDITOR']));
+  if (assignedRoles.includes('CUSTOMER')) throw new AppError('Customer is not a staff role', 400);
+  if (getUserRoles(req.user!).includes('ADMIN') && assignedRoles.includes('SUPER_ADMIN')) {
     throw new AppError('Only a Super Administrator can create a Super Administrator account', 403);
   }
   const passwordHash = await hashPassword(tempPassword);
 
-  const user = await prisma.user.create({
-    data: {
+  const user = await prisma.$transaction(async (tx) => {
+    const created = await tx.user.create({
+      data: {
       email,
       username,
       firstName,
       lastName,
-      role: role ?? 'EDITOR',
+      role: assignedRoles[0],
       phone,
       department,
       passwordHash,
       mustChangePassword: !password,
       createdById: req.user!.id,
-    },
+      },
+      include: { roleAssignments: true },
+    });
+    await tx.userRoleAssignment.createMany({ data: assignedRoles.map((assignedRole) => ({ userId: created.id, role: assignedRole })) });
+    return created;
   });
 
   if (req.body.sendWelcomeEmail !== false) {
@@ -123,7 +135,7 @@ export async function createUser(req: AuthenticatedRequest, res: Response): Prom
     action: 'CREATE_USER',
     resource: 'users',
     resourceId: user.id,
-    metadata: { email, role: user.role },
+    metadata: { email, roles: assignedRoles },
     ipAddress: getIp(req),
     userAgent: req.headers['user-agent'],
   });
@@ -142,6 +154,7 @@ export async function getUserById(req: AuthenticatedRequest, res: Response): Pro
       firstName: true,
       lastName: true,
       role: true,
+      roleAssignments: { select: { role: true } },
       status: true,
       avatarUrl: true,
       phone: true,
@@ -245,11 +258,15 @@ export async function updateUserRole(req: AuthenticatedRequest, res: Response): 
 
   // An ADMIN has elevated website-management access, including assignment of
   // operational roles, but cannot change the Super Administrator boundary.
-  if (req.user!.role === 'ADMIN' && (user.role === 'SUPER_ADMIN' || role === 'SUPER_ADMIN')) {
+  if (getUserRoles(req.user!).includes('ADMIN') && (user.role === 'SUPER_ADMIN' || role === 'SUPER_ADMIN')) {
     throw new AppError('Only a Super Administrator can manage Super Administrator accounts', 403);
   }
 
-  await prisma.user.update({ where: { id }, data: { role } });
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({ where: { id }, data: { role } });
+    await tx.userRoleAssignment.deleteMany({ where: { userId: id } });
+    await tx.userRoleAssignment.create({ data: { userId: id, role } });
+  });
 
   await createAuditLog({
     userId: req.user!.id,
@@ -262,6 +279,27 @@ export async function updateUserRole(req: AuthenticatedRequest, res: Response): 
   });
 
   res.status(200).json(successResponse(null, `User role updated to ${role}`));
+}
+
+// PUT /api/users/:id/roles
+export async function updateUserRoles(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const { id } = req.params;
+  const roles = Array.from(new Set((req.body.roles as UserRole[]).filter((role) => role !== 'CUSTOMER')));
+  if (!roles.length) throw new AppError('Select at least one staff role', 400);
+  if (id === req.user!.id) throw new AppError('Cannot change your own roles', 400);
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) throw new NotFoundError('User');
+  if (user.role === 'CUSTOMER') throw new AppError('Customer accounts cannot be assigned staff roles', 400);
+  if (getUserRoles(req.user!).includes('ADMIN') && (user.role === 'SUPER_ADMIN' || roles.includes('SUPER_ADMIN'))) {
+    throw new AppError('Only a Super Administrator can manage Super Administrator accounts', 403);
+  }
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({ where: { id }, data: { role: roles[0] } });
+    await tx.userRoleAssignment.deleteMany({ where: { userId: id } });
+    await tx.userRoleAssignment.createMany({ data: roles.map((role) => ({ userId: id, role })) });
+  });
+  await createAuditLog({ userId: req.user!.id, action: 'UPDATE_USER_ROLES', resource: 'users', resourceId: id, metadata: { roles }, ipAddress: getIp(req), userAgent: req.headers['user-agent'] });
+  res.status(200).json(successResponse(null, `Assigned ${roles.length} role${roles.length === 1 ? '' : 's'}`));
 }
 
 // POST /api/users/:id/reset-password

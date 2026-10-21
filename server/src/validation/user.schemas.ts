@@ -11,6 +11,7 @@ export const createUserSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(50),
   lastName: z.string().min(1, 'Last name is required').max(50),
   role: z.nativeEnum(UserRole).default('EDITOR'),
+  roles: z.array(z.nativeEnum(UserRole)).min(1).max(7).optional(),
   phone: z.string().max(20).optional(),
   department: z.string().max(100).optional(),
   password: z
@@ -45,6 +46,10 @@ export const updateUserStatusSchema = z.object({
 
 export const updateUserRoleSchema = z.object({
   role: z.nativeEnum(UserRole),
+});
+
+export const updateUserRolesSchema = z.object({
+  roles: z.array(z.nativeEnum(UserRole)).min(1).max(7),
 });
 
 export const adminSetPasswordSchema = z.object({

@@ -86,7 +86,7 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, { hasError: bo
 // ── Protected admin wrapper ────────────────────────────────────────────────────
 function AdminGuard({ user, children }: { user: User | null; children: ReactNode }) {
   if (!user) return <Navigate to="/admin/login" replace />;
-  if (user.role === 'CUSTOMER') return <Navigate to="/account" replace />;
+  if (user.role === 'CUSTOMER' && !(user.roles ?? []).some(role => role !== 'CUSTOMER')) return <Navigate to="/account" replace />;
   return <>{children}</>;
 }
 
@@ -147,7 +147,7 @@ export default function App() {
           path="/admin/login"
           element={
             user
-              ? <Navigate to={user.role === 'CUSTOMER' ? '/account' : '/admin/dashboard'} replace />
+              ? <Navigate to={user.role === 'CUSTOMER' && !(user.roles ?? []).some(role => role !== 'CUSTOMER') ? '/account' : '/admin/dashboard'} replace />
               : <Login onLogin={setUser} />
           }
         />

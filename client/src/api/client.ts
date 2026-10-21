@@ -7,15 +7,21 @@ export type ApiResult<T> = {
 
 export async function api<T>(path: string, options: RequestInit = {}): Promise<ApiResult<T>> {
   const isFormData = options.body instanceof FormData;
+  const controller = options.signal ? null : new AbortController();
+  const timeout = controller ? window.setTimeout(() => controller.abort(), isFormData ? 120_000 : 30_000) : undefined;
   const headers: Record<string, string> = {
     ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(options.headers as Record<string, string> ?? {}),
   };
-  const response = await fetch(`/api${path}`, {
-    credentials: 'include',
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`/api${path}`, { credentials: 'include', ...options, signal: options.signal ?? controller?.signal, headers });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') throw new Error('The request took too long. Please try again.');
+    throw error;
+  } finally {
+    if (timeout) window.clearTimeout(timeout);
+  }
   const body = await response.json().catch(() => ({ message: 'Unable to reach NATGAS services.' }));
   if (!response.ok) {
     const fieldErrors = body.errors && typeof body.errors === 'object'
@@ -173,6 +179,7 @@ export interface User {
   firstName: string;
   lastName: string;
   role: string;
+  roles?: string[];
   status: string;
   lastLoginAt?: string;
   phone?: string;
