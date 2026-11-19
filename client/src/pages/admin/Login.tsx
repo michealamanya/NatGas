@@ -14,10 +14,7 @@ export default function Login({ onLogin }: { onLogin: (u: User) => void }) {
     setError(''); setLoading(true);
     const values = Object.fromEntries(new FormData(e.currentTarget));
     try {
-      const r = await api<{ user: User }>('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify(values),
-      });
+      const r = await api<{ user: User }>('/auth/login', { method: 'POST', body: JSON.stringify(values) });
       onLogin(r.data.user);
       navigate('/admin/dashboard');
     } catch (err) {
@@ -29,95 +26,65 @@ export default function Login({ onLogin }: { onLogin: (u: User) => void }) {
 
   return (
     <div className="login-wrap">
-      {/* ── Left branding panel ── */}
+
+      {/* Left branding */}
       <div className="login-l">
-        {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 36 }}>
-          <img
-            src="/naticon.jpeg"
-            alt="Natgas Uganda Limited"
-            style={{ height: 56, width: 'auto', objectFit: 'contain' }}
-          />
+          <img src="/naticon.jpeg" alt="Natgas Uganda" style={{ height: 52, width: 'auto', objectFit: 'contain', borderRadius: 8 }} />
           <div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', lineHeight: 1.1 }}>
-              NATGAS
-            </div>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '2px', color: '#5aab9a', textTransform: 'uppercase' }}>
-              UGANDA LIMITED
-            </div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: '-.5px', lineHeight: 1.1 }}>NATGAS</div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '2px', color: 'rgba(255,255,255,.55)', textTransform: 'uppercase' }}>UGANDA LIMITED</div>
           </div>
         </div>
 
         <h1>Staff Admin Portal</h1>
-        <p>
-          Securely manage NATGAS Uganda's digital platform —
-          products, services, news, jobs and more.
-        </p>
+        <p>Securely manage NATGAS Uganda's digital platform — products, services, news, jobs and more.</p>
 
         <div style={{ marginTop: 40, display: 'flex', flexDirection: 'column', gap: 16 }}>
           {[
             { title: 'Role-based access control', sub: 'Permissions enforced for every user role.' },
-            { title: 'Full audit trail',           sub: 'Every action logged with timestamp.' },
-            { title: 'Secure HTTP-only sessions',  sub: 'Industry-standard authentication.' },
+            { title: 'Full audit trail',           sub: 'Every action logged with timestamp.'       },
+            { title: 'Secure HTTP-only sessions',  sub: 'Industry-standard authentication.'         },
           ].map(({ title, sub }) => (
             <div key={title} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-              <div style={{ width: 32, height: 32, background: 'rgba(255,255,255,.08)', borderRadius: 7, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-                <ShieldCheck size={15} style={{ color: '#7ad4c0' }} />
+              <div style={{ width: 32, height: 32, background: 'rgba(255,255,255,.1)', borderRadius: 7, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                <ShieldCheck size={15} style={{ color: 'var(--gold-2)' }} />
               </div>
               <div>
                 <b style={{ display: 'block', fontSize: 13, color: '#fff', marginBottom: 2 }}>{title}</b>
-                <span style={{ fontSize: 12, color: '#5a9a90' }}>{sub}</span>
+                <span style={{ fontSize: 12, color: 'rgba(255,255,255,.55)' }}>{sub}</span>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ── Right form panel ── */}
+      {/* Right form */}
       <div className="login-r">
         <div className="login-box">
-          {/* Logo mark for mobile */}
+          {/* Logo for mobile */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
-            <img src="/naticon.jpeg" alt="Natgas Uganda" style={{ height: 44, width: 'auto', objectFit: 'contain' }} />
+            <img src="/naticon.jpeg" alt="Natgas Uganda" style={{ height: 42, width: 'auto', objectFit: 'contain', borderRadius: 6 }} />
             <div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--green)', letterSpacing: '-.3px' }}>NATGAS</div>
-              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '1.8px', color: '#2e8b2e', textTransform: 'uppercase' }}>UGANDA LIMITED</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--green)', letterSpacing: '-.3px' }}>NATGAS</div>
+              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '1.8px', color: 'var(--gold-text)', textTransform: 'uppercase' }}>UGANDA LIMITED</div>
             </div>
           </div>
 
           <h2>Welcome back</h2>
           <p>Sign in with your staff credentials.</p>
 
-          <form onSubmit={submit}>
+          <form onSubmit={submit} style={{ marginTop: 24 }}>
             <div className="fg">
               <label htmlFor="login-email">Email address</label>
-              <input
-                id="login-email"
-                required
-                type="email"
-                name="email"
-                autoComplete="email"
-                placeholder="you@natgasuganda.com"
-              />
+              <input id="login-email" required type="email" name="email" autoComplete="email" placeholder="you@natgasuganda.com" />
             </div>
 
             <div className="fg">
               <label htmlFor="login-password">Password</label>
               <div className="pwd-wrap">
-                <input
-                  id="login-password"
-                  required
-                  type={showPwd ? 'text' : 'password'}
-                  name="password"
-                  autoComplete="current-password"
-                  placeholder="Your password"
-                />
-                <button
-                  type="button"
-                  className="pwd-eye"
-                  onClick={() => setShowPwd(s => !s)}
-                  aria-label={showPwd ? 'Hide password' : 'Show password'}
-                >
+                <input id="login-password" required type={showPwd ? 'text' : 'password'} name="password" autoComplete="current-password" placeholder="Your password" />
+                <button type="button" className="pwd-eye" onClick={() => setShowPwd(s => !s)} aria-label={showPwd ? 'Hide password' : 'Show password'}>
                   {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
@@ -125,12 +92,11 @@ export default function Login({ onLogin }: { onLogin: (u: User) => void }) {
 
             {error && <div className="form-err" style={{ marginBottom: 12 }}>{error}</div>}
 
-            <button
-              className="btn btn-dark btn-full"
-              type="submit"
-              disabled={loading}
-            >
-              {loading ? 'Signing in…' : <><span>Sign in</span> <ArrowRight size={14} /></>}
+            <button className="btn btn-dark btn-full" type="submit" disabled={loading}>
+              {loading
+                ? <span style={{ opacity: .7 }}>Signing in…</span>
+                : <><span>Sign in</span> <ArrowRight size={14} /></>
+              }
             </button>
           </form>
 

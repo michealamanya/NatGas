@@ -112,8 +112,20 @@ export default function AdminServices() {
     </form>
     <div className="product-grid product-grid-3">
       {services.map(service => <article className="ncard" key={service.id}>
-        {service.imageUrl && <div className="ncard-img"><img src={service.imageUrl} alt={service.name} /></div>}
-        <div className="ncard-body"><h3>{service.name}</h3><p>{service.shortDesc ?? service.description}</p><div className="admin-form-actions"><button type="button" className="btn btn-outline" onClick={() => startEdit(service)}><Pencil size={14} /> Edit</button><button type="button" className="btn btn-outline" onClick={() => setPendingDelete(service)}><Trash2 size={14} /> Delete</button></div></div>
+        <div className="ncard-img">
+          {service.imageUrl
+            ? <img src={service.imageUrl} alt={service.name} loading="lazy" />
+            : <div style={{ width:'100%', height:'100%', display:'grid', placeItems:'center', background:'var(--light)', color:'var(--muted)', opacity:.4 }}><ImagePlus size={28} /></div>
+          }
+        </div>
+        <div className="ncard-body">
+          <h3>{service.name}</h3>
+          <p>{service.shortDesc ?? service.description}</p>
+        </div>
+        <div style={{ padding:'12px 18px 16px', borderTop:'1px solid #f0f0f0', display:'flex', gap:8 }}>
+          <button type="button" className="btn btn-outline btn-sm" onClick={() => startEdit(service)}><Pencil size={13} /> Edit</button>
+          <button type="button" className="btn btn-sm" style={{ background:'var(--light)', color:'var(--muted)', border:'1px solid var(--border)' }} onClick={() => setPendingDelete(service)}><Trash2 size={13} /> Delete</button>
+        </div>
       </article>)}
     </div>
     <ConfirmDialog open={Boolean(pendingDelete)} title="Delete service?" message={`This will permanently remove ${pendingDelete?.name ?? 'this service'} from the website and CMS.`} confirmLabel="Delete service" onCancel={() => setPendingDelete(null)} onConfirm={() => { if (pendingDelete) { void remove(pendingDelete); setPendingDelete(null); } }} />

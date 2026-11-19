@@ -126,9 +126,21 @@ export function About() {
           <div className="partners-marquee partners-grid-static" aria-label="Industrial partners">
             <div className="partners-track">
               {[...uniquePartners, ...uniquePartners].map((partner, index) => {
-                const mark = <div className="partner-mark">{partner.logoUrl ? <img src={partner.logoUrl} alt={partner.name} loading="lazy" /> : partner.name}</div>;
+                const card = (
+                  <div className="partner-mark">
+                    <div className="partner-mark-logo">
+                      {partner.logoUrl
+                        ? <img src={partner.logoUrl} alt={partner.name} loading="lazy" />
+                        : <span className="partner-mark-initials">{partner.name.slice(0,2).toUpperCase()}</span>
+                      }
+                    </div>
+                    <span className="partner-mark-name">{partner.name}</span>
+                  </div>
+                );
                 const key = `${partner.name}-${index}`;
-                return partner.websiteUrl ? <a href={partner.websiteUrl} target="_blank" rel="noreferrer" key={key} aria-hidden={index >= uniquePartners.length}>{mark}</a> : <div key={key} aria-hidden={index >= uniquePartners.length}>{mark}</div>;
+                return partner.websiteUrl
+                  ? <a href={partner.websiteUrl} target="_blank" rel="noreferrer" key={key} aria-hidden={index >= uniquePartners.length}>{card}</a>
+                  : <div key={key} aria-hidden={index >= uniquePartners.length}>{card}</div>;
               })}
             </div>
           </div>
@@ -203,7 +215,7 @@ export function Services() {
                   <div className="svc-card-copy">
                     <h3>{service.name}</h3>
                     <p>{service.shortDesc ?? service.description}</p>
-                    <span className="ncard-more">Explore service <ArrowRight size={13} /></span>
+                    <span className="svc-more">Explore service <ArrowRight size={13} /></span>
                   </div>
                 </Link>
               ))}
