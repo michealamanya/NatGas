@@ -229,3 +229,122 @@ export async function sendWelcomeEmail(
     text: `Hi ${name},\n\nYour account has been created.\n${temporaryPassword ? `Temporary password: ${temporaryPassword}\n` : ''}Sign in at: ${loginUrl}`,
   });
 }
+
+/**
+ * HR/admin alert sent to NOTIFY_EMAIL when a new job application arrives.
+ * Gives HR immediate visibility so they can act without checking the dashboard.
+ */
+export async function sendJobApplicationAdminNotification(
+  jobTitle: string,
+  applicantName: string,
+  applicantEmail: string,
+  applicantPhone: string | undefined,
+  coverLetterSnippet: string | undefined,
+  cvUrl: string | undefined,
+  adminUrl: string,
+): Promise<void> {
+  const rows = [
+    ['Applicant', applicantName],
+    ['Email', `<a href="mailto:${applicantEmail}" style="color:#0d3b35;">${applicantEmail}</a>`],
+    ...(applicantPhone ? [['Phone', `<a href="tel:${applicantPhone}" style="color:#0d3b35;">${applicantPhone}</a>`]] : []),
+    ['Position', `<strong>${jobTitle}</strong>`],
+    ['Applied at', new Date().toLocaleString('en-UG', { dateStyle: 'full', timeStyle: 'short' })],
+  ]
+    .map(
+      ([label, value], i) =>
+        `<tr style="${i % 2 === 1 ? 'background:#f9fafb;' : ''}">
+          <td style="padding:9px 14px;font-weight:600;color:#374151;white-space:nowrap;width:120px;">${label}</td>
+          <td style="padding:9px 14px;color:#4b5563;">${value}</td>
+        </tr>`,
+    )
+    .join('');
+
+  const coverSection = coverLetterSnippet
+    ? `<div style="margin-top:18px;background:#f9fafb;border-left:4px solid #0d3b35;padding:14px 16px;border-radius:0 4px 4px 0;">
+         <p style="margin:0 0 6px;font-weight:600;color:#374151;font-size:13px;">Cover letter excerpt</p>
+         <p style="margin:0;color:#4b5563;font-size:13px;line-height:1.65;">${coverLetterSnippet.slice(0, 400)}${coverLetterSnippet.length > 400 ? '…' : ''}</p>
+       </div>`
+    : '';
+
+  const cvSection = cvUrl
+    ? `<div style="margin-top:14px;">
+         <a href="${cvUrl}" style="display:inline-block;background:#f3f4f6;color:#374151;padding:9px 18px;text-decoration:none;border-radius:6px;font-weight:600;font-size:13px;border:1px solid #e5e7eb;">
+           📄 Download CV / Resume
+         </a>
+       </div>`
+    : '';
+
+  const html =
+    emailHeader(`New job application — ${jobTitle}`) +
+    `<p style="color:#6b7280;font-size:14px;margin-bottom:16px;">
+       A new application has been submitted via the NATGAS Uganda careers page.
+       Review and respond via the admin dashboard.
+     </p>
+     <table width="100%" cellpadding="0" cellspacing="0"
+       style="border:1px solid #e5e7eb;border-radius:6px;border-collapse:collapse;margin-bottom:4px;">
+       ${rows}
+     </table>
+     ${coverSection}
+     ${cvSection}` +
+    actionButton('Review application in dashboard', adminUrl) +
+    emailFooter();
+
+  await sendMail({
+    to: config.email.notifyEmail,
+    subject: `New application: ${jobTitle} — ${applicantName}`,
+    html,
+    text: `New job application received\n\nPosition: ${jobTitle}\nApplicant: ${applicantName} (${applicantEmail})\n${applicantPhone ? `Phone: ${applicantPhone}\n` : ''}${coverLetterSnippet ? `\nCover letter:\n${coverLetterSnippet.slice(0, 400)}\n` : ''}\nReview at: ${adminUrl}`,
+  });
+}
+
+/**
+ * Notification sent to NOTIFY_EMAIL when a new customer order is submitted.
+ */
+export async function sendNewOrderNotification(
+  orderNumber: string,
+  customerName: string,
+  customerEmail: string,
+  customerPhone: string,
+  items: Array<{ productName: string; quantity: number }>,
+  deliveryAddress: string,
+  district: string,
+  deliveryMethod: string,
+  adminUrl: string,
+): Promise<void> {
+  const itemsHtml = items
+    .map(
+      (item, i) =>
+        `<tr style="${i % 2 === 1 ? 'background:#f9fafb;' : ''}">
+          <td style="padding:8px 14px;color:#4b5563;">${item.quantity} ×</td>
+          <td style="padding:8px 14px;color:#374151;font-weight:600;">${item.productName}</td>
+        </tr>`,
+    )
+    .join('');
+
+  const html =
+    emailHeader(`New order — ${orderNumber}`) +
+    `<p style="color:#6b7280;font-size:14px;margin-bottom:16px;">
+       A new LPG order request has been placed and is awaiting confirmation.
+     </p>
+     <table width="100%" cellpadding="0" cellspacing="0"
+       style="border:1px solid #e5e7eb;border-radius:6px;border-collapse:collapse;margin-bottom:16px;">
+       <tr><td style="padding:9px 14px;font-weight:600;color:#374151;width:120px;">Customer</td><td style="padding:9px 14px;color:#4b5563;">${customerName}</td></tr>
+       <tr style="background:#f9fafb;"><td style="padding:9px 14px;font-weight:600;color:#374151;">Email</td><td style="padding:9px 14px;color:#4b5563;"><a href="mailto:${customerEmail}" style="color:#0d3b35;">${customerEmail}</a></td></tr>
+       <tr><td style="padding:9px 14px;font-weight:600;color:#374151;">Phone</td><td style="padding:9px 14px;color:#4b5563;"><a href="tel:${customerPhone}" style="color:#0d3b35;">${customerPhone}</a></td></tr>
+       <tr style="background:#f9fafb;"><td style="padding:9px 14px;font-weight:600;color:#374151;">Delivery</td><td style="padding:9px 14px;color:#4b5563;">${deliveryMethod === 'PICKUP' ? 'Outlet collection' : 'Home / business delivery'}<br><span style="color:#6b7280;">${deliveryAddress}, ${district}</span></td></tr>
+     </table>
+     <p style="font-weight:600;color:#374151;margin-bottom:8px;">Items ordered</p>
+     <table width="100%" cellpadding="0" cellspacing="0"
+       style="border:1px solid #e5e7eb;border-radius:6px;border-collapse:collapse;margin-bottom:4px;">
+       ${itemsHtml}
+     </table>` +
+    actionButton('Manage order in dashboard', adminUrl) +
+    emailFooter();
+
+  await sendMail({
+    to: config.email.notifyEmail,
+    subject: `New order ${orderNumber} — ${customerName}`,
+    html,
+    text: `New order: ${orderNumber}\nCustomer: ${customerName} (${customerEmail} / ${customerPhone})\nDelivery: ${deliveryMethod} — ${deliveryAddress}, ${district}\nItems:\n${items.map(i => `  ${i.quantity} × ${i.productName}`).join('\n')}\n\nManage at: ${adminUrl}`,
+  });
+}

@@ -9,7 +9,8 @@ import {
 import { NotFoundError, AppError } from '../utils/errors.js';
 import { createAuditLog } from '../services/audit.service.js';
 import { uploadFile } from '../services/storage.service.js';
-import { sendJobApplicationConfirmation } from '../services/email.service.js';
+import { sendJobApplicationConfirmation, sendJobApplicationAdminNotification } from '../services/email.service.js';
+import { config } from '../config/index.js';
 import { createSlug, createUniqueSlug } from '../utils/slug.js';
 import { Prisma } from '@prisma/client';
 type ApplicationStatus = 'NEW' | 'REVIEWING' | 'SHORTLISTED' | 'INTERVIEW' | 'REJECTED' | 'HIRED';
@@ -124,8 +125,19 @@ export async function applyForJob(req: Request, res: Response): Promise<void> {
     },
   });
 
-  // Send confirmation email (non-blocking)
+  // Send confirmation email to applicant (non-blocking)
   sendJobApplicationConfirmation(email, job.title, fullName).catch(() => undefined);
+
+  // Notify HR/admin immediately (non-blocking)
+  sendJobApplicationAdminNotification(
+    job.title,
+    fullName,
+    email,
+    phone,
+    coverLetter,
+    cvUrl,
+    `${config.client.url}/admin/jobs`,
+  ).catch(() => undefined);
 
   res.status(201).json(successResponse(
     { id: application.id },

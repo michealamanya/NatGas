@@ -40,7 +40,7 @@ export async function submitContact(req: Request, res: Response): Promise<void> 
   });
 
   // Notify admin via email (non-blocking)
-  sendContactNotification(config.email.from, { name, email, phone, subject, message }).catch(
+  sendContactNotification(config.email.notifyEmail, { name, email, phone, subject, message }).catch(
     () => undefined,
   );
 
