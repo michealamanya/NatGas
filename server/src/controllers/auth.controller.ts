@@ -15,7 +15,7 @@ import {
   isAccountLocked,
   toSafeUser,
 } from '../services/auth.service.js';
-import { sendPasswordReset } from '../services/email.service.js';
+import { sendPasswordReset, sendWelcomeEmail } from '../services/email.service.js';
 import { createAuditLog } from '../services/audit.service.js';
 import { config } from '../config/index.js';
 
@@ -104,6 +104,8 @@ export async function registerCustomer(req: Request, res: Response): Promise<voi
   if (await prisma.user.findUnique({ where: { email } })) throw new AppError('An account with this email already exists. Please sign in.', 409);
   const username = `customer-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
   const user = await prisma.user.create({ data: { firstName, lastName, email, phone, username, passwordHash: await hashPassword(password), role: 'CUSTOMER' } });
+  // Send welcome email (non-blocking)
+  sendWelcomeEmail(email, firstName).catch(() => undefined);
   const token = await createSession(user.id, getClientIp(req), req.headers['user-agent']);
   res.cookie(COOKIE_NAME, token, SESSION_COOKIE_OPTIONS);
   res.status(201).json(successResponse({ user: toSafeUser(user) }, 'Account created. You can now submit your order request.'));

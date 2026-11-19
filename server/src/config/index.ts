@@ -91,8 +91,7 @@ export const config = {
     from: optionalEnv('EMAIL_FROM', 'notifications@natgasuganda.com'),
     fromName: optionalEnv('EMAIL_FROM_NAME', 'NATGAS Uganda'),
     // The address that receives all internal admin/HR notifications.
-    // Defaults to the same as EMAIL_FROM so it always works out of the box.
-    notifyEmail: optionalEnv('NOTIFY_EMAIL', optionalEnv('EMAIL_FROM', 'info@natgasuganda.com')),
+    notifyEmail: optionalEnv('NOTIFY_EMAIL', 'info@natgasuganda.com'),
     smtp: {
       host: optionalEnv('SMTP_HOST', 'localhost'),
       port: parseInt(optionalEnv('SMTP_PORT', '587'), 10),

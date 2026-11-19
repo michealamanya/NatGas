@@ -348,3 +348,42 @@ export async function sendNewOrderNotification(
     text: `New order: ${orderNumber}\nCustomer: ${customerName} (${customerEmail} / ${customerPhone})\nDelivery: ${deliveryMethod} — ${deliveryAddress}, ${district}\nItems:\n${items.map(i => `  ${i.quantity} × ${i.productName}`).join('\n')}\n\nManage at: ${adminUrl}`,
   });
 }
+
+/**
+ * Notification sent to a customer when an order status changes.
+ */
+export async function sendOrderStatusUpdate(
+  customerEmail: string,
+  customerName: string,
+  orderNumber: string,
+  status: string,
+  staffNotes?: string,
+): Promise<void> {
+  const statusLabel = status.replace(/_/g, ' ');
+  const notesSection = staffNotes
+    ? `<div style="margin-top:18px;background:#f9fafb;border-left:4px solid #0d3b35;padding:14px 16px;border-radius:0 4px 4px 0;">
+         <p style="margin:0 0 6px;font-weight:600;color:#374151;font-size:13px;">Message from our team</p>
+         <p style="margin:0;color:#4b5563;font-size:14px;line-height:1.6;white-space:pre-wrap;">${staffNotes}</p>
+       </div>`
+    : '';
+
+  const html =
+    emailHeader('Order status update') +
+    `<p style="color:#374151;font-size:15px;">Hi ${customerName},</p>
+     <p style="color:#6b7280;font-size:14px;line-height:1.7;">There is an update on your NATGAS Uganda order <strong>${orderNumber}</strong>.</p>
+     <div style="margin:22px 0;padding:16px;background:#f0faf8;border:1px solid #a7d4cf;border-radius:6px;text-align:center;">
+       <p style="margin:0 0 6px;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Current status</p>
+       <p style="margin:0;color:#0d3b35;font-size:20px;font-weight:700;">${statusLabel}</p>
+     </div>
+     ${notesSection}
+     <p style="color:#6b7280;font-size:14px;line-height:1.7;">You can sign in to your account to view your order details.</p>` +
+    actionButton('View my orders', `${config.client.url}/account`) +
+    emailFooter();
+
+  await sendMail({
+    to: customerEmail,
+    subject: `Order ${orderNumber} updated — ${statusLabel}`,
+    html,
+    text: `Hi ${customerName},\n\nYour order ${orderNumber} is now ${statusLabel}.${staffNotes ? `\n\nMessage from our team:\n${staffNotes}` : ''}\n\nView your orders at: ${config.client.url}/account`,
+  });
+}

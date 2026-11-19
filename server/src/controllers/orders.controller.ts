@@ -5,6 +5,8 @@ import { prisma } from '../database/client.js';
 import { AuthenticatedRequest, successResponse } from '../types/index.js';
 import { AppError, NotFoundError } from '../utils/errors.js';
 import { createAuditLog } from '../services/audit.service.js';
+import { sendNewOrderNotification, sendOrderStatusUpdate } from '../services/email.service.js';
+import { config } from '../config/index.js';
 
 /**
  * Generate a unique order number in the format NG-{year}-{6-char suffix}.
@@ -108,6 +110,22 @@ export async function createOrder(req: AuthenticatedRequest, res: Response): Pro
     metadata: { orderNumber: order!.orderNumber },
   });
 
+  // Notify admin of new order (non-blocking)
+  sendNewOrderNotification(
+    order!.orderNumber,
+    `${req.user!.firstName} ${req.user!.lastName}`,
+    req.user!.email,
+    phone,
+    items.map((item) => ({
+      productName: byId.get(item.productId)!.name,
+      quantity: item.quantity,
+    })),
+    deliveryAddress,
+    district,
+    deliveryMethod ?? 'DELIVERY',
+    `${config.client.url}/admin/orders`,
+  ).catch(() => undefined);
+
   res.status(201).json(
     successResponse(order, 'Order request received. Our team will confirm it shortly.'),
   );
@@ -127,7 +145,23 @@ export async function adminUpdateOrder(req: AuthenticatedRequest, res: Response)
   const { status, staffNotes } = req.body as { status?: OrderStatus; staffNotes?: string };
   const existing = await prisma.order.findUnique({ where: { id: req.params.id } });
   if (!existing) throw new NotFoundError('Order');
-  const order = await prisma.order.update({ where: { id: existing.id }, data: { status, staffNotes }, include: { customer: { select: { email: true, firstName: true } }, items: true } });
+  const order = await prisma.order.update({
+    where: { id: existing.id },
+    data: { status, staffNotes },
+    include: { customer: { select: { email: true, firstName: true } }, items: true },
+  });
   await createAuditLog({ userId: req.user!.id, action: 'UPDATE_ORDER', resource: 'order', resourceId: order.id, metadata: { status: order.status } });
-  res.json(successResponse(order, 'Order updated. The customer will be notified when email delivery is configured.'));
+
+  // Email the customer when status changes (non-blocking)
+  if (status && status !== existing.status) {
+    sendOrderStatusUpdate(
+      order.customer.email,
+      order.customer.firstName,
+      order.orderNumber,
+      status,
+      staffNotes ?? existing.staffNotes ?? undefined,
+    ).catch(() => undefined);
+  }
+
+  res.json(successResponse(order, 'Order updated.'));
 }
