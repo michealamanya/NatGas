@@ -165,6 +165,12 @@ export default function PublicLayout() {
           <NavLink to="/products?category=lpg-cylinders" className="nav-enquire">Order Gas</NavLink>
           {cartCount > 0 && <><NavLink to="/account" className="nav-shop-action" aria-label="My account"><UserCircle size={18} /><span>Account</span></NavLink><NavLink to="/order" className="nav-shop-action nav-cart" aria-label={`Order cart, ${cartCount} item${cartCount === 1 ? '' : 's'}`}><ShoppingCart size={18} /><span>Cart</span><b>{cartCount}</b></NavLink></>}
         </div>
+        <button
+          type="button"
+          className="mobile-nav-backdrop"
+          aria-label="Close navigation"
+          onClick={() => setMobileOpen(false)}
+        />
       </nav>
 
       {/* ── Page content ── */}

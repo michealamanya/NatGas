@@ -1,6 +1,6 @@
 import {
   BarChart3, Briefcase, FileText, Globe, LayoutDashboard,
-  Image, Loader2, LogOut, MapPin, MessageSquare, Package, Settings, Users, Upload, PanelLeftClose, PanelLeftOpen,
+  Image, Loader2, LogOut, MapPin, Menu, MessageSquare, Package, Settings, Users, Upload, PanelLeftClose, PanelLeftOpen, X,
 } from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
@@ -31,6 +31,7 @@ export default function AdminLayout({ user, onLogout }: { user: User; onLogout?:
   const [navCollapsed, setNavCollapsed] = useState(() => localStorage.getItem('natgas-admin-nav-collapsed') === 'true');
   const [actionBusy, setActionBusy] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     let toastTimer: number | undefined;
@@ -54,6 +55,14 @@ export default function AdminLayout({ user, onLogout }: { user: User; onLogout?:
       window.removeEventListener('natgas-action-success', handleSuccess);
       window.removeEventListener('natgas-action-error', handleError);
     };
+  }, []);
+
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileNavOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
   }, []);
 
   useEffect(() => {
@@ -87,7 +96,7 @@ export default function AdminLayout({ user, onLogout }: { user: User; onLogout?:
   };
 
   return (
-    <div className={`admin-wrap${navCollapsed ? ' nav-collapsed' : ''}`}>
+    <div className={`admin-wrap${navCollapsed ? ' nav-collapsed' : ''}${mobileNavOpen ? ' mobile-nav-open' : ''}`}>
       {/* ── Sidebar ── */}
       <aside className="admin-sidebar">
         <div className="admin-logo">
@@ -102,6 +111,9 @@ export default function AdminLayout({ user, onLogout }: { user: User; onLogout?:
           <button type="button" className="admin-nav-toggle" onClick={toggleNav} aria-label={navCollapsed ? 'Expand admin navigation' : 'Collapse admin navigation'} title={navCollapsed ? 'Expand navigation' : 'Collapse navigation'}>
             {navCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
           </button>
+          <button type="button" className="admin-mobile-nav-close" onClick={() => setMobileNavOpen(false)} aria-label="Close navigation">
+            <X size={20} />
+          </button>
         </div>
 
         <div className="admin-nav">
@@ -111,6 +123,7 @@ export default function AdminLayout({ user, onLogout }: { user: User; onLogout?:
               key={to}
               to={to}
               className={({ isActive }) => `anav-link${isActive ? ' active' : ''}`}
+              onClick={() => setMobileNavOpen(false)}
             >
               <Icon size={15} /> <span>{label}</span>{label === 'Jobs' && newApplications > 0 && <b className="admin-nav-badge" aria-label={`${newApplications} new applications`}>{newApplications > 99 ? '99+' : newApplications}</b>}
             </NavLink>
@@ -130,6 +143,12 @@ export default function AdminLayout({ user, onLogout }: { user: User; onLogout?:
           </button>
         </div>
       </aside>
+      <button
+        type="button"
+        className="admin-mobile-backdrop"
+        aria-label="Close admin navigation"
+        onClick={() => setMobileNavOpen(false)}
+      />
 
       {/* ── Main body ── */}
       <div className="admin-body">
@@ -141,6 +160,10 @@ export default function AdminLayout({ user, onLogout }: { user: User; onLogout?:
         )}
         {/* Top bar */}
         <div className="admin-top">
+          <button type="button" className="admin-mobile-menu" onClick={() => setMobileNavOpen(true)} aria-label="Open admin navigation" aria-expanded={mobileNavOpen}>
+            <Menu size={20} />
+            <span>Menu</span>
+          </button>
           <h2>Natgas Uganda — Content Management</h2>
           <div className="admin-top-r">
             <span style={{ fontSize: 12, color: 'var(--muted)', textTransform: 'capitalize' }}>
