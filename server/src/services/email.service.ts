@@ -387,3 +387,50 @@ export async function sendOrderStatusUpdate(
     text: `Hi ${customerName},\n\nYour order ${orderNumber} is now ${statusLabel}.${staffNotes ? `\n\nMessage from our team:\n${staffNotes}` : ''}\n\nView your orders at: ${config.client.url}/account`,
   });
 }
+
+export async function sendAccountStatusEmail(
+  email: string,
+  name: string,
+  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING',
+): Promise<void> {
+  const active = status === 'ACTIVE';
+  const html =
+    emailHeader(active ? 'Account activated' : 'Account access changed') +
+    `<p style="color:#374151;font-size:15px;">Hi ${name},</p>
+     <p style="color:#6b7280;font-size:14px;line-height:1.7;">The status of your NATGAS Uganda account is now <strong>${status.toLowerCase()}</strong>.</p>
+     <p style="color:#6b7280;font-size:14px;line-height:1.7;">${active ? 'You can sign in and continue using your account.' : 'You cannot use this account until access is restored by a NATGAS administrator.'}</p>` +
+    actionButton(active ? 'Sign in' : 'Contact NATGAS', active ? `${config.client.url}/account` : `${config.client.url}/contact`) +
+    emailFooter();
+
+  await sendMail({
+    to: email,
+    subject: `NATGAS account ${active ? 'activated' : 'access changed'}`,
+    html,
+    text: `Hi ${name},\n\nYour NATGAS Uganda account status is now ${status.toLowerCase()}.\n`,
+  });
+}
+
+export async function sendAccountDeletedEmail(
+  email: string,
+  name: string,
+  deactivatedForHistory: boolean,
+): Promise<void> {
+  const title = deactivatedForHistory ? 'Account deactivated' : 'Account deleted';
+  const detail = deactivatedForHistory
+    ? 'Your account was deactivated because existing order history must be preserved. It can no longer be used to sign in.'
+    : 'Your NATGAS Uganda account has been permanently deleted.';
+  const html =
+    emailHeader(title) +
+    `<p style="color:#374151;font-size:15px;">Hi ${name},</p>
+     <p style="color:#6b7280;font-size:14px;line-height:1.7;">${detail}</p>
+     <p style="color:#6b7280;font-size:14px;line-height:1.7;">If you believe this was done in error, contact the NATGAS team.</p>` +
+    actionButton('Contact NATGAS', `${config.client.url}/contact`) +
+    emailFooter();
+
+  await sendMail({
+    to: email,
+    subject: `NATGAS Uganda account ${deactivatedForHistory ? 'deactivated' : 'deleted'}`,
+    html,
+    text: `Hi ${name},\n\n${detail}\n\nContact NATGAS: ${config.client.url}/contact`,
+  });
+}

@@ -1357,7 +1357,7 @@ body { background:#f7f8f7; }
 }
 @media (max-width: 1200px) {
   .admin-main { padding:22px 20px; }
-  .data-table { min-width: 920px; }
+  .data-table { min-width: 980px; }
   .data-table th:last-child,
   .data-table td:last-child {
     position: sticky;
@@ -1365,7 +1365,9 @@ body { background:#f7f8f7; }
     background: #fff;
     box-shadow: -8px 0 14px rgba(17,24,39,.04);
   }
-  .staff-actions { flex-wrap: wrap; max-width: 190px; }
+  .data-table th:last-child { z-index: 2; }
+  .staff-actions { flex-wrap: nowrap; max-width: none; white-space: nowrap; gap: 7px; }
+  .staff-actions .tact { white-space: nowrap; }
   .admin-top-r > span:first-child { display:none; }
 }
 

@@ -12,7 +12,7 @@ import {
   hashPassword,
   toSafeUser,
 } from '../services/auth.service.js';
-import { sendWelcomeEmail } from '../services/email.service.js';
+import { sendAccountDeletedEmail, sendAccountStatusEmail, sendWelcomeEmail } from '../services/email.service.js';
 import { createAuditLog } from '../services/audit.service.js';
 import { Prisma, UserRole, UserStatus } from '@prisma/client';
 import crypto from 'crypto';
@@ -237,6 +237,8 @@ export async function updateUserStatus(req: AuthenticatedRequest, res: Response)
     userAgent: req.headers['user-agent'],
   });
 
+  await sendAccountStatusEmail(user.email, user.firstName, status);
+
   res.status(200).json(successResponse(null, `User status updated to ${status}`));
 }
 
@@ -335,7 +337,9 @@ export async function adminSetPassword(req: AuthenticatedRequest, res: Response)
   const user = await prisma.user.findUnique({ where: { id: req.params.id } });
   if (!user) throw new NotFoundError('User');
   if (user.role === 'SUPER_ADMIN' && req.user!.role !== 'SUPER_ADMIN') throw new AppError('Only a Super Administrator can change this password', 403);
-  await prisma.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(req.body.password), mustChangePassword: true } });
+  const temporaryPassword = req.body.password as string;
+  await prisma.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(temporaryPassword), mustChangePassword: true } });
+  await sendWelcomeEmail(user.email, user.firstName, temporaryPassword);
   await createAuditLog({ userId:req.user!.id, action:'ADMIN_SET_PASSWORD', resource:'users', resourceId:user.id, ipAddress:getIp(req), userAgent:req.headers['user-agent'] });
   res.json(successResponse(null, 'Password updated. The user must change it at next sign-in.'));
 }
@@ -349,20 +353,41 @@ export async function deleteUser(req: AuthenticatedRequest, res: Response): Prom
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) throw new NotFoundError('User');
 
-  // Soft delete: deactivate rather than hard delete
-  await prisma.user.update({
-    where: { id },
-    data: { status: 'INACTIVE' },
+  const orderCount = await prisma.order.count({ where: { customerId: id } });
+  if (orderCount > 0) {
+    await prisma.user.update({
+      where: { id },
+      data: { status: 'INACTIVE' },
+    });
+
+    await createAuditLog({
+      userId: req.user!.id,
+      action: 'DEACTIVATE_USER',
+      resource: 'users',
+      resourceId: id,
+      metadata: { reason: 'Preserved order history', orderCount },
+      ipAddress: getIp(req),
+      userAgent: req.headers['user-agent'],
+    });
+    await sendAccountDeletedEmail(user.email, user.firstName, true);
+    res.status(200).json(successResponse(null, 'Account deactivated because order history must be preserved'));
+    return;
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.delete({ where: { id } });
   });
 
   await createAuditLog({
     userId: req.user!.id,
-    action: 'DEACTIVATE_USER',
+    action: 'DELETE_USER',
     resource: 'users',
     resourceId: id,
+    metadata: { email: user.email },
     ipAddress: getIp(req),
     userAgent: req.headers['user-agent'],
   });
+  await sendAccountDeletedEmail(user.email, user.firstName, false);
 
-  res.status(200).json(successResponse(null, 'User deactivated'));
+  res.status(200).json(successResponse(null, 'User account deleted'));
 }
