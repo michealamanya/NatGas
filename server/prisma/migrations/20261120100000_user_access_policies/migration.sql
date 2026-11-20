@@ -1,6 +1,6 @@
 CREATE TABLE "user_access_policies" (
   "id" TEXT NOT NULL,
-  "user_id" TEXT NOT NOT NULL,
+  "user_id" TEXT NOT NULL,
   "can_login" BOOLEAN NOT NULL DEFAULT true,
   "allowed_from" TIMESTAMP(3),
   "allowed_until" TIMESTAMP(3),
