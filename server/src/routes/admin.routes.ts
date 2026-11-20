@@ -88,6 +88,7 @@ import {
   adminResetPassword,
   adminSetPassword,
   deleteUser,
+  updateUserAccess,
 } from '../controllers/users.controller.js';
 
 // Validation schemas
@@ -101,7 +102,7 @@ import {
 import { createNewsArticleSchema, updateNewsArticleSchema } from '../validation/news.schemas.js';
 import { createJobSchema, updateJobSchema, updateApplicationStatusSchema } from '../validation/job.schemas.js';
 import { updateContactStatusSchema } from '../validation/contact.schemas.js';
-import { createUserSchema, updateUserSchema, updateUserStatusSchema, updateUserRoleSchema, updateUserRolesSchema, adminSetPasswordSchema } from '../validation/user.schemas.js';
+import { createUserSchema, updateUserSchema, updateUserStatusSchema, updateUserRoleSchema, updateUserRolesSchema, adminSetPasswordSchema, updateUserAccessSchema } from '../validation/user.schemas.js';
 import { adminListOrders, adminUpdateOrder } from '../controllers/orders.controller.js';
 import { updateOrderSchema } from '../validation/order.schemas.js';
 
@@ -131,6 +132,7 @@ router.put('/users/:id/role', requireRole('ADMIN', 'SUPER_ADMIN'), validate(upda
 router.put('/users/:id/roles', requireRole('ADMIN', 'SUPER_ADMIN'), validate(updateUserRolesSchema), updateUserRoles);
 router.post('/users/:id/reset-password', requireRole('ADMIN', 'SUPER_ADMIN'), adminResetPassword);
 router.put('/users/:id/password', requireRole('ADMIN', 'SUPER_ADMIN'), validate(adminSetPasswordSchema), adminSetPassword);
+router.put('/users/:id/access', requireRole('ADMIN', 'SUPER_ADMIN'), validate(updateUserAccessSchema), updateUserAccess);
 router.delete('/users/:id', requireRole('SUPER_ADMIN'), deleteUser);
 
 // ==================== Products ====================
@@ -205,9 +207,9 @@ router.delete('/pages/:id', requireRole('ADMIN', 'SUPER_ADMIN'), deletePage);
 
 // ==================== Settings ====================
 router.get('/settings', requireRole('ADMIN', 'SUPER_ADMIN'), getAllSettings);
-router.put('/settings', requireRole('ADMIN', 'SUPER_ADMIN'), updateSettings);
+router.put('/settings', requireRole('CONTENT_MANAGER', 'ADMIN', 'SUPER_ADMIN'), updateSettings);
 router.post('/settings/restore-defaults', requireRole('ADMIN', 'SUPER_ADMIN'), restorePresentationDefaults);
-router.put('/settings/:key', requireRole('ADMIN', 'SUPER_ADMIN'), updateSetting);
+router.put('/settings/:key', requireRole('CONTENT_MANAGER', 'ADMIN', 'SUPER_ADMIN'), updateSetting);
 
 // ==================== Audit Logs ====================
 router.get('/audit-logs', requireRole('ADMIN', 'SUPER_ADMIN'), listAuditLogs);

@@ -50,6 +50,7 @@ export async function listUsers(req: AuthenticatedRequest, res: Response): Promi
         lastName: true,
         role: true,
         roleAssignments: { select: { role: true } },
+        accessPolicy: true,
         status: true,
         avatarUrl: true,
         phone: true,
@@ -302,6 +303,59 @@ export async function updateUserRoles(req: AuthenticatedRequest, res: Response):
   });
   await createAuditLog({ userId: req.user!.id, action: 'UPDATE_USER_ROLES', resource: 'users', resourceId: id, metadata: { roles }, ipAddress: getIp(req), userAgent: req.headers['user-agent'] });
   res.status(200).json(successResponse(null, `Assigned ${roles.length} role${roles.length === 1 ? '' : 's'}`));
+}
+
+export async function updateUserAccess(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const { id } = req.params;
+  const { canLogin, allowedFrom, allowedUntil, allowedWeekdays, allowedModules, ipAllowlist } =
+    req.body as {
+      canLogin: boolean;
+      allowedFrom?: string | null;
+      allowedUntil?: string | null;
+      allowedWeekdays?: number[];
+      allowedModules?: string[];
+      ipAllowlist?: string[];
+    };
+
+  if (id === req.user!.id) throw new AppError('Use your profile security page to change your own account restrictions', 400);
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) throw new NotFoundError('User');
+  if (user.role === 'SUPER_ADMIN' && !getUserRoles(req.user!).includes('SUPER_ADMIN')) {
+    throw new AppError('Only a Super Administrator can manage Super Administrator access', 403);
+  }
+
+  await prisma.userAccessPolicy.upsert({
+    where: { userId: id },
+    create: {
+      userId: id,
+      canLogin,
+      allowedFrom: allowedFrom ? new Date(allowedFrom) : null,
+      allowedUntil: allowedUntil ? new Date(allowedUntil) : null,
+      allowedWeekdays: allowedWeekdays ?? undefined,
+      allowedModules: allowedModules ?? undefined,
+      ipAllowlist: ipAllowlist ?? undefined,
+    },
+    update: {
+      canLogin,
+      allowedFrom: allowedFrom ? new Date(allowedFrom) : null,
+      allowedUntil: allowedUntil ? new Date(allowedUntil) : null,
+      allowedWeekdays: allowedWeekdays ?? undefined,
+      allowedModules: allowedModules ?? undefined,
+      ipAllowlist: ipAllowlist ?? undefined,
+    },
+  });
+
+  if (!canLogin) await prisma.session.deleteMany({ where: { userId: id } });
+  await createAuditLog({
+    userId: req.user!.id,
+    action: 'UPDATE_USER_ACCESS_POLICY',
+    resource: 'users',
+    resourceId: id,
+    metadata: { canLogin, allowedFrom, allowedUntil, allowedWeekdays, allowedModules, ipAllowlist },
+    ipAddress: getIp(req),
+    userAgent: req.headers['user-agent'],
+  });
+  res.status(200).json(successResponse(null, canLogin ? 'Account access policy updated' : 'Account login disabled'));
 }
 
 // POST /api/users/:id/reset-password

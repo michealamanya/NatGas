@@ -105,6 +105,19 @@ export async function validateSession(token: string): Promise<SafeUser | null> {
   const u = session.user;
   if (u.status !== 'ACTIVE') return null;
 
+  const accessPolicy = await prisma.userAccessPolicy.findUnique({ where: { userId: u.id } });
+  if (accessPolicy) {
+    if (!accessPolicy.canLogin) return null;
+    const now = new Date();
+    if (accessPolicy.allowedFrom && now < accessPolicy.allowedFrom) return null;
+    if (accessPolicy.allowedUntil && now > accessPolicy.allowedUntil) return null;
+    const weekdays = accessPolicy.allowedWeekdays as number[] | null;
+    if (weekdays?.length && !weekdays.includes(now.getDay())) return null;
+    const ipAllowlist = accessPolicy.ipAllowlist as string[] | null;
+    // Session validation has no request IP context, so IP restrictions are
+    // enforced at login and by session request middleware below.
+  }
+
   return toSafeUser(u);
 }
 

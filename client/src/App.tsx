@@ -41,6 +41,7 @@ const AdminUsers     = lazy(() => import('./pages/admin/AdminUsers'));
 const AdminAudit     = lazy(() => import('./pages/admin/AdminAudit'));
 const AdminSettings  = lazy(() => import('./pages/admin/AdminSettings'));
 const AdminExperience = lazy(() => import('./pages/admin/AdminExperience'));
+const AdminMarketing = lazy(() => import('./pages/admin/AdminMarketing'));
 const AdminPlaceholder = lazy(() => import('./pages/admin/AdminPlaceholder'));
 
 // ── Spinner ────────────────────────────────────────────────────────────────────
@@ -188,6 +189,7 @@ export default function App() {
           <Route path="audit"     element={lazyAdminPage(<AdminAudit />)} />
           <Route path="settings"  element={lazyAdminPage(<AdminSettings />)} />
           <Route path="experience" element={lazyAdminPage(<AdminExperience />)} />
+          <Route path="marketing" element={lazyAdminPage(<AdminMarketing />)} />
         </Route>
 
         {/* ── Catch-all ───────────────────────────────────── */}

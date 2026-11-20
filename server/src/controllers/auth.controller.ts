@@ -15,7 +15,7 @@ import {
   isAccountLocked,
   toSafeUser,
 } from '../services/auth.service.js';
-import { sendPasswordReset, sendWelcomeEmail } from '../services/email.service.js';
+import { sendPasswordChangedEmail, sendPasswordReset, sendProfileUpdatedEmail, sendWelcomeEmail } from '../services/email.service.js';
 import { createAuditLog } from '../services/audit.service.js';
 import { config } from '../config/index.js';
 
@@ -43,7 +43,7 @@ export async function login(req: Request, res: Response): Promise<void> {
   const ip = getClientIp(req);
   const userAgent = req.headers['user-agent'];
 
-  const user = await prisma.user.findUnique({ where: { email }, include: { roleAssignments: true } });
+  const user = await prisma.user.findUnique({ where: { email }, include: { roleAssignments: true, accessPolicy: true } });
   if (!user) {
     // Generic message to avoid user enumeration
     res.status(401).json(errorResponse('Invalid email or password'));
@@ -53,6 +53,17 @@ export async function login(req: Request, res: Response): Promise<void> {
   // Check account status
   if (user.status === 'INACTIVE' || user.status === 'SUSPENDED') {
     res.status(401).json(errorResponse('Your account is disabled. Please contact support.'));
+    return;
+  }
+  const allowedWeekdays = user.accessPolicy?.allowedWeekdays as number[] | null;
+  const ipAllowlist = user.accessPolicy?.ipAllowlist as string[] | null;
+  const requestIp = getClientIp(req);
+  if (user.accessPolicy && (!user.accessPolicy.canLogin ||
+    (user.accessPolicy.allowedFrom && new Date() < user.accessPolicy.allowedFrom) ||
+    (user.accessPolicy.allowedUntil && new Date() > user.accessPolicy.allowedUntil) ||
+    (allowedWeekdays?.length && !allowedWeekdays.includes(new Date().getDay())) ||
+    (ipAllowlist?.length && !ipAllowlist.includes(requestIp)))) {
+    res.status(403).json(errorResponse('This account is outside its permitted login window.'));
     return;
   }
 
@@ -151,6 +162,7 @@ export async function updateProfile(req: AuthenticatedRequest, res: Response): P
     ipAddress: getClientIp(req),
     userAgent: req.headers['user-agent'],
   });
+  await sendProfileUpdatedEmail(user.email, user.firstName);
   res.status(200).json(successResponse(toSafeUser(user), 'Account details updated.'));
 }
 
@@ -160,6 +172,7 @@ export async function updateProfile(req: AuthenticatedRequest, res: Response): P
 export async function updateProfileAvatar(req: AuthenticatedRequest, res: Response): Promise<void> {
   const { avatarUrl } = req.body as { avatarUrl: string | null };
   const user = await prisma.user.update({ where: { id: req.user!.id }, data: { avatarUrl } });
+  await sendProfileUpdatedEmail(user.email, user.firstName);
   res.status(200).json(successResponse(toSafeUser(user), 'Profile photo updated.'));
 }
 
@@ -247,6 +260,7 @@ export async function changePassword(req: AuthenticatedRequest, res: Response): 
     ipAddress: getClientIp(req),
     userAgent: req.headers['user-agent'],
   });
+  await sendPasswordChangedEmail(user.email, user.firstName);
 
   res.cookie(COOKIE_NAME, newToken, SESSION_COOKIE_OPTIONS);
   res.status(200).json(successResponse(null, 'Password changed successfully'));

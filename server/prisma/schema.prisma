@@ -114,6 +114,7 @@ model User {
   createdUsers      User[]           @relation("UserCreatedBy")
   orders            Order[]          @relation("CustomerOrders")
   roleAssignments   UserRoleAssignment[]
+  accessPolicy      UserAccessPolicy?
 
   @@map("users")
   @@index([email])
@@ -133,6 +134,23 @@ model UserRoleAssignment {
   @@unique([userId, role])
   @@index([userId])
   @@map("user_role_assignments")
+}
+
+model UserAccessPolicy {
+  id             String   @id @default(uuid())
+  userId         String   @unique @map("user_id")
+  canLogin       Boolean  @default(true) @map("can_login")
+  allowedFrom    DateTime? @map("allowed_from")
+  allowedUntil   DateTime? @map("allowed_until")
+  allowedWeekdays Json?   @map("allowed_weekdays")
+  allowedModules Json?    @map("allowed_modules")
+  ipAllowlist    Json?    @map("ip_allowlist")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_access_policies")
 }
 
 model Session {

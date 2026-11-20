@@ -434,3 +434,43 @@ export async function sendAccountDeletedEmail(
     text: `Hi ${name},\n\n${detail}\n\nContact NATGAS: ${config.client.url}/contact`,
   });
 }
+
+export async function sendProfileUpdatedEmail(
+  email: string,
+  name: string,
+): Promise<void> {
+  const html =
+    emailHeader('Profile updated') +
+    `<p style="color:#374151;font-size:15px;">Hi ${name},</p>
+     <p style="color:#6b7280;font-size:14px;line-height:1.7;">Your NATGAS Uganda account profile was updated successfully.</p>
+     <p style="color:#6b7280;font-size:14px;line-height:1.7;">If you did not make this change, please contact the NATGAS team immediately.</p>` +
+    actionButton('Manage account', `${config.client.url}/admin/dashboard`) +
+    emailFooter();
+
+  await sendMail({
+    to: email,
+    subject: 'Your NATGAS Uganda profile was updated',
+    html,
+    text: `Hi ${name},\n\nYour account profile was updated successfully. If you did not make this change, contact NATGAS immediately.`,
+  });
+}
+
+export async function sendPasswordChangedEmail(
+  email: string,
+  name: string,
+): Promise<void> {
+  const html =
+    emailHeader('Password changed') +
+    `<p style="color:#374151;font-size:15px;">Hi ${name},</p>
+     <p style="color:#6b7280;font-size:14px;line-height:1.7;">The password for your NATGAS Uganda account was changed successfully.</p>
+     <p style="color:#6b7280;font-size:14px;line-height:1.7;">If you did not make this change, reset your password or contact the NATGAS team immediately.</p>` +
+    actionButton('Secure your account', `${config.client.url}/account`) +
+    emailFooter();
+
+  await sendMail({
+    to: email,
+    subject: 'Your NATGAS Uganda password was changed',
+    html,
+    text: `Hi ${name},\n\nThe password for your account was changed successfully. If you did not make this change, secure your account immediately.`,
+  });
+}

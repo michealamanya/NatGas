@@ -1,6 +1,6 @@
 import { ArrowRight, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { FormEvent, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api, User } from '../../api/client';
 
 export default function Login({ onLogin }: { onLogin: (u: User) => void }) {
@@ -8,6 +8,9 @@ export default function Login({ onLogin }: { onLogin: (u: User) => void }) {
   const [loading, setLoading] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const nextPath = searchParams.get('next');
+  const safeNext = nextPath?.startsWith('/admin/') ? nextPath : null;
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -16,7 +19,7 @@ export default function Login({ onLogin }: { onLogin: (u: User) => void }) {
     try {
       const r = await api<{ user: User }>('/auth/login', { method: 'POST', body: JSON.stringify(values) });
       onLogin(r.data.user);
-      navigate('/admin/dashboard');
+      navigate(safeNext ?? '/admin/dashboard', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid email or password.');
     } finally {

@@ -56,5 +56,14 @@ export const adminSetPasswordSchema = z.object({
   password: z.string().min(8).regex(/[A-Z]/).regex(/[a-z]/).regex(/[0-9]/).regex(/[^A-Za-z0-9]/),
 });
 
+export const updateUserAccessSchema = z.object({
+  canLogin: z.boolean(),
+  allowedFrom: z.string().datetime().nullable().optional(),
+  allowedUntil: z.string().datetime().nullable().optional(),
+  allowedWeekdays: z.array(z.number().int().min(0).max(6)).optional(),
+  allowedModules: z.array(z.string()).optional(),
+  ipAllowlist: z.array(z.string()).optional(),
+});
+
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;

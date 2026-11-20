@@ -198,6 +198,14 @@ export interface User {
   lastLoginAt?: string;
   phone?: string;
   avatarUrl?: string | null;
+  accessPolicy?: {
+    canLogin: boolean;
+    allowedFrom?: string | null;
+    allowedUntil?: string | null;
+    allowedWeekdays?: number[] | null;
+    allowedModules?: string[] | null;
+    ipAllowlist?: string[] | null;
+  };
 }
 
 export interface DashboardStats {

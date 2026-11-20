@@ -1,4 +1,4 @@
-import { Briefcase, ClipboardList, Loader2, Plus, Users, X } from 'lucide-react';
+import { Briefcase, ClipboardList, Download, Loader2, Plus, Search, Users, X } from 'lucide-react';
 import { FormEvent, useEffect, useState } from 'react';
 import { api, Job } from '../../api/client';
 import ConfirmDialog from '../../components/ConfirmDialog';
@@ -230,10 +230,20 @@ function ApplicationsTab() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
+  const [checkedIds, setCheckedIds] = useState<string[]>([]);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     api<any[]>('/admin/applications?limit=100')
-      .then(r => setApps(r.data ?? []))
+      .then(r => {
+        const applicationList = r.data ?? [];
+        setApps(applicationList);
+        const applicationId = new URLSearchParams(window.location.search).get('application');
+        if (applicationId) {
+          const match = applicationList.find(application => application.id === applicationId);
+          if (match) void openApplication(match);
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -261,18 +271,86 @@ function ApplicationsTab() {
     } finally { setSaving(false); }
   };
 
+  const filteredApps = apps.filter(application => {
+    const term = search.trim().toLowerCase();
+    if (!term) return true;
+    return [application.fullName, application.email, application.job?.title]
+      .some(value => String(value ?? '').toLowerCase().includes(term));
+  });
+
+  const toggleChecked = (id: string) => setCheckedIds(current =>
+    current.includes(id) ? current.filter(value => value !== id) : [...current, id],
+  );
+
+  const toggleAllVisible = () => {
+    const visibleIds = filteredApps.map(application => application.id);
+    setCheckedIds(current => visibleIds.every(id => current.includes(id))
+      ? current.filter(id => !visibleIds.includes(id))
+      : Array.from(new Set([...current, ...visibleIds])));
+  };
+
+  const downloadSelected = () => {
+    apps
+      .filter(application => checkedIds.includes(application.id) && application.cvUrl)
+      .forEach((application, index) => {
+        window.setTimeout(() => {
+          const link = document.createElement('a');
+          link.href = application.cvUrl;
+          link.target = '_blank';
+          link.download = `${application.fullName.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-cv`;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        }, index * 250);
+      });
+  };
+
+  const updateSelectedStatus = async (status: string) => {
+    if (!checkedIds.length) return;
+    setSaving(true);
+    try {
+      await Promise.all(checkedIds.map(id =>
+        api(`/admin/applications/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),
+      ));
+      setApps(current => current.map(application =>
+        checkedIds.includes(application.id) ? { ...application, status } : application,
+      ));
+      setCheckedIds([]);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="admin-card jobs-card">
       <div className="admin-card-header"><h3><ClipboardList size={16} /> Applications <span>{apps.length}</span></h3><p>Review incoming candidate submissions.</p></div>
+      <div className="application-toolbar">
+        <label className="application-search"><Search size={15} /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Search applicant or role" /></label>
+        {checkedIds.length > 0 && (
+          <div className="application-bulk-actions">
+            <span>{checkedIds.length} selected</span>
+            <select aria-label="Change selected status" defaultValue="" onChange={event => { if (event.target.value) void updateSelectedStatus(event.target.value); event.target.value = ''; }}>
+              <option value="" disabled>Set status</option>
+              <option value="REVIEWING">Reviewing</option>
+              <option value="SHORTLISTED">Shortlisted</option>
+              <option value="INTERVIEW">Interview</option>
+              <option value="REJECTED">Rejected</option>
+              <option value="HIRED">Hired</option>
+            </select>
+            <button type="button" className="btn btn-outline btn-sm" onClick={downloadSelected}><Download size={14} /> Download CVs</button>
+          </div>
+        )}
+      </div>
       {loading ? (
         <div className="loading-state"><Loader2 size={22} className="spin" /></div>
       ) : (
         <div className="data-table-wrap">
           <table className="data-table">
-            <thead><tr><th>Applicant</th><th>Job</th><th>Applied</th><th>Status</th><th>CV</th></tr></thead>
+            <thead><tr><th><input type="checkbox" aria-label="Select visible applications" checked={filteredApps.length > 0 && filteredApps.every(application => checkedIds.includes(application.id))} onChange={toggleAllVisible} /></th><th>Applicant</th><th>Job</th><th>Applied</th><th>Status</th><th>CV</th></tr></thead>
             <tbody>
-              {apps.map(a => (
+              {filteredApps.map(a => (
                 <tr key={a.id} className="clickable-row" onClick={() => void openApplication(a)}>
+                  <td onClick={event => event.stopPropagation()}><input type="checkbox" aria-label={`Select ${a.fullName}`} checked={checkedIds.includes(a.id)} onChange={() => toggleChecked(a.id)} /></td>
                   <td><button className="applicant-link" type="button" onClick={() => void openApplication(a)}><b>{a.fullName}</b><small>{a.email}</small></button></td>
                   <td>{a.job?.title ?? '—'}</td>
                   <td>{new Date(a.appliedAt).toLocaleDateString()}</td>
@@ -281,7 +359,7 @@ function ApplicationsTab() {
                 </tr>
               ))}
               {apps.length === 0 && (
-                <tr><td colSpan={5} style={{ textAlign:'center', color:'var(--muted)', padding:'32px' }}>No applications yet.</td></tr>
+                <tr><td colSpan={6} style={{ textAlign:'center', color:'var(--muted)', padding:'32px' }}>No applications found.</td></tr>
               )}
             </tbody>
           </table>

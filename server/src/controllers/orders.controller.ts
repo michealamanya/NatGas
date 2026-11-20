@@ -123,7 +123,7 @@ export async function createOrder(req: AuthenticatedRequest, res: Response): Pro
     deliveryAddress,
     district,
     deliveryMethod ?? 'DELIVERY',
-    `${config.client.url}/admin/orders`,
+    `${config.client.url}/admin/login?next=${encodeURIComponent(`/admin/orders?order=${order!.orderNumber}`)}`,
   ).catch(() => undefined);
 
   res.status(201).json(

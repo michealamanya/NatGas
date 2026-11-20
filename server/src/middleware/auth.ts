@@ -4,6 +4,7 @@ import { AuthenticationError, AuthorizationError } from '../utils/errors.js';
 import { validateSession } from '../services/auth.service.js';
 import { UserRole } from '@prisma/client';
 import { getUserRoles, ROLE_HIERARCHY } from '../types/index.js';
+import { prisma } from '../database/client.js';
 
 /**
  * Core session validation - extracts token from cookie and validates it.
@@ -17,6 +18,35 @@ async function resolveUser(req: AuthenticatedRequest): Promise<{ user: SafeUser;
   if (!user) return null;
 
   return { user, token };
+}
+
+async function allowedByAccessPolicy(req: AuthenticatedRequest): Promise<boolean> {
+  if (!req.user) return false;
+  if (getUserRoles(req.user).includes('SUPER_ADMIN')) return true;
+  const policy = await prisma.userAccessPolicy.findUnique({ where: { userId: req.user.id } });
+  if (!policy) return true;
+  if (!policy.canLogin) return false;
+  const now = new Date();
+  if (policy.allowedFrom && now < policy.allowedFrom) return false;
+  if (policy.allowedUntil && now > policy.allowedUntil) return false;
+  const weekdays = policy.allowedWeekdays as number[] | null;
+  if (weekdays?.length && !weekdays.includes(now.getDay())) return false;
+  const ipAllowlist = policy.ipAllowlist as string[] | null;
+  const requestIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || '';
+  if (ipAllowlist?.length && !ipAllowlist.includes(requestIp)) return false;
+  const modules = policy.allowedModules as string[] | null;
+  if (modules?.length) {
+    const path = (req.originalUrl ?? '').toLowerCase();
+    const moduleMap: Record<string, string> = {
+      dashboard: 'Overview', products: 'Products', services: 'Services', media: 'Media',
+      experience: 'Experience', locations: 'Locations', orders: 'Orders', news: 'News',
+      jobs: 'Jobs', applications: 'Jobs', contact: 'Messages', users: 'Users',
+      audit: 'Audit', auditLogs: 'Audit', settings: 'Settings', marketing: 'Marketing',
+    };
+    const segment = path.split('?')[0].split('/').find((part: string) => moduleMap[part]);
+    if (segment && !modules.includes(moduleMap[segment])) return false;
+  }
+  return true;
 }
 
 /**
@@ -34,6 +64,9 @@ export async function requireAuth(
   }
   req.user = result.user;
   req.sessionToken = result.token;
+  if (!getUserRoles(req.user).includes('SUPER_ADMIN') && !(await allowedByAccessPolicy(req))) {
+    return next(new AuthorizationError('This account access is restricted'));
+  }
   next();
 }
 
@@ -51,6 +84,13 @@ export function requireRole(...roles: UserRole[]) {
     req.sessionToken = result.token;
 
     const userRoles = getUserRoles(req.user!);
+    if (userRoles.includes('SUPER_ADMIN')) {
+      next();
+      return;
+    }
+    if (!(await allowedByAccessPolicy(req))) {
+      return next(new AuthorizationError('This account access is restricted'));
+    }
     const hasRole = roles.some((role) => {
       return userRoles.some((userRole) => ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[role]);
     });

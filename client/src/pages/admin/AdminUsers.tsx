@@ -1,11 +1,12 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { KeyRound, Pencil, Plus, ShieldCheck, Trash2, Users } from 'lucide-react';
+import { KeyRound, Pencil, Plus, ShieldCheck, Trash2, Users, X } from 'lucide-react';
 import { api } from '../../api/client';
 import ConfirmDialog from '../../components/ConfirmDialog';
 
 type Account = {
   id: string; firstName: string; lastName: string; email: string; username: string;
   role: string; roles?: string[]; status: string; department?: string; phone?: string; lastLoginAt?: string;
+  accessPolicy?: { canLogin: boolean; allowedFrom?: string | null; allowedUntil?: string | null; allowedWeekdays?: number[] | null; allowedModules?: string[] | null; ipAllowlist?: string[] | null };
 };
 
 const staffRoles = ['EDITOR', 'CONTENT_MANAGER', 'HR', 'OPERATIONS', 'ADMIN'];
@@ -20,6 +21,8 @@ export default function AdminUsers() {
   const [pendingAction, setPendingAction] = useState<{ account: Account; kind: 'status' | 'reset' | 'delete' } | null>(null);
   const [currentRole, setCurrentRole] = useState('');
   const [editingRoles, setEditingRoles] = useState<string[]>([]);
+  const [accessAccount, setAccessAccount] = useState<Account | null>(null);
+  const [accessSaving, setAccessSaving] = useState(false);
 
   const load = async () => {
     try {
@@ -54,6 +57,7 @@ export default function AdminUsers() {
     try {
       const result = await api(`/admin/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role }) });
       message(result.message ?? 'Role updated.'); await load();
+      window.dispatchEvent(new Event('natgas-auth-change'));
     } catch (cause) { showError(cause, 'Unable to update role.'); }
   };
 
@@ -61,6 +65,7 @@ export default function AdminUsers() {
     try {
       const result = await api(`/admin/users/${id}/roles`, { method: 'PUT', body: JSON.stringify({ roles }) });
       message(result.message ?? 'Roles updated.'); await load();
+      window.dispatchEvent(new Event('natgas-auth-change'));
     } catch (cause) { showError(cause, 'Unable to update roles.'); }
   };
 
@@ -84,6 +89,35 @@ export default function AdminUsers() {
       const result = await api(`/admin/users/${id}`, { method: 'DELETE' });
       message(result.message ?? 'Account deleted.'); await load();
     } catch (cause) { showError(cause, 'Unable to delete this account.'); }
+  };
+
+  const saveAccess = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!accessAccount) return;
+    setAccessSaving(true);
+    setError('');
+    try {
+      const form = new FormData(event.currentTarget);
+      const allowedWeekdays = form.getAll('allowedWeekdays').map(value => Number(value));
+      const allowedModules = form.getAll('allowedModules').map(value => String(value));
+      const ipAllowlist = String(form.get('ipAllowlist') ?? '').split(/[\n,]/).map(value => value.trim()).filter(Boolean);
+      const payload = {
+        canLogin: form.get('canLogin') === 'on',
+        allowedFrom: String(form.get('allowedFrom') ?? '') ? new Date(String(form.get('allowedFrom'))).toISOString() : null,
+        allowedUntil: String(form.get('allowedUntil') ?? '') ? new Date(String(form.get('allowedUntil'))).toISOString() : null,
+        allowedWeekdays,
+        allowedModules,
+        ipAllowlist,
+      };
+      const result = await api(`/admin/users/${accessAccount.id}/access`, { method: 'PUT', body: JSON.stringify(payload) });
+      message(result.message ?? 'Account access policy updated.');
+      setAccessAccount(null);
+      await load();
+    } catch (cause) {
+      showError(cause, 'Unable to update account access.');
+    } finally {
+      setAccessSaving(false);
+    }
   };
 
   const update = async (event: FormEvent<HTMLFormElement>) => {
@@ -154,11 +188,34 @@ export default function AdminUsers() {
             {account.role !== 'SUPER_ADMIN' && <button className="tact" onClick={() => setPendingAction({ account, kind: 'status' })}><ShieldCheck size={13} />{account.status === 'ACTIVE' ? 'Suspend' : 'Activate'}</button>}
             <button className="tact" onClick={() => { setEditing(account); setEditingRoles(account.roles ?? [account.role]); }}><KeyRound size={13} /> Password</button>
             <button className="tact" onClick={() => setPendingAction({ account, kind: 'reset' })}><KeyRound size={13} /> Reset</button>
+            {account.role !== 'SUPER_ADMIN' && <button className="tact" onClick={() => setAccessAccount(account)}><ShieldCheck size={13} /> Access</button>}
             {account.role !== 'SUPER_ADMIN' && <button className="tact danger" onClick={() => setPendingAction({ account, kind: 'delete' })}><Trash2 size={13} /> Delete</button>}
           </div></td>
         </tr>)}{!rows.length && <tr><td colSpan={6}>No accounts found.</td></tr>}</tbody>
       </table></div>
     </section>
     <ConfirmDialog open={Boolean(pendingAction)} title={pendingAction?.kind === 'reset' ? 'Reset account password?' : pendingAction?.kind === 'delete' ? 'Delete this account?' : `${pendingAction?.account.status === 'ACTIVE' ? 'Suspend' : 'Activate'} this account?`} message={pendingAction?.kind === 'reset' ? `A new temporary password will be generated for ${pendingAction?.account.email}.` : pendingAction?.kind === 'delete' ? `${pendingAction?.account.email} will be permanently deleted when it has no order history. Accounts with order history will be deactivated to preserve those records.` : pendingAction?.account.status === 'ACTIVE' ? `${pendingAction?.account.email} will no longer be able to sign in or place orders.` : `${pendingAction?.account.email} will be able to sign in again.`} confirmLabel={pendingAction?.kind === 'reset' ? 'Reset password' : pendingAction?.kind === 'delete' ? 'Delete account' : pendingAction?.account.status === 'ACTIVE' ? 'Suspend account' : 'Activate account'} onCancel={() => setPendingAction(null)} onConfirm={() => { const action = pendingAction; setPendingAction(null); if (action?.kind === 'reset') void reset(action.account.id); else if (action?.kind === 'delete') void remove(action.account.id); else if (action) void changeStatus(action.account); }} />
+    {accessAccount && (
+      <div className="admin-profile-modal-backdrop" role="dialog" aria-modal="true" onMouseDown={event => { if (event.target === event.currentTarget) setAccessAccount(null); }}>
+        <form className="admin-profile-modal" onSubmit={saveAccess}>
+          <div className="admin-profile-modal-head">
+            <div><span className="chip-sm">ACCOUNT POLICY</span><h2 id="account-access-title">Login &amp; access</h2></div>
+            <button type="button" className="confirm-close" onClick={() => setAccessAccount(null)} aria-label="Close account access"><X size={18} /></button>
+          </div>
+          <div className="admin-profile-modal-form">
+            <p className="admin-page-sub">{accessAccount.email}</p>
+            <label className="account-policy-toggle"><input type="checkbox" name="canLogin" defaultChecked={accessAccount.accessPolicy?.canLogin !== false} /><span><b>Allow account login</b><small>Disabling this immediately ends all sessions.</small></span></label>
+            <div className="form-grid">
+              <label>Allowed from<input type="datetime-local" name="allowedFrom" defaultValue={accessAccount.accessPolicy?.allowedFrom ? accessAccount.accessPolicy.allowedFrom.slice(0,16) : ''} /></label>
+              <label>Allowed until<input type="datetime-local" name="allowedUntil" defaultValue={accessAccount.accessPolicy?.allowedUntil ? accessAccount.accessPolicy.allowedUntil.slice(0,16) : ''} /></label>
+            </div>
+            <fieldset className="account-policy-fieldset"><legend>Permitted weekdays</legend><div className="weekday-options">{['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((day, index) => <label key={day}><input type="checkbox" name="allowedWeekdays" value={index} defaultChecked={!accessAccount.accessPolicy?.allowedWeekdays?.length || accessAccount.accessPolicy.allowedWeekdays.includes(index)} />{day}</label>)}</div></fieldset>
+            <fieldset className="account-policy-fieldset"><legend>Allowed admin modules</legend><div className="module-options">{['Overview','Products','Services','Media','Experience','Locations','Orders','News','Jobs','Messages','Users','Audit','Settings'].map(module => <label key={module}><input type="checkbox" name="allowedModules" value={module} defaultChecked={!accessAccount.accessPolicy?.allowedModules?.length || accessAccount.accessPolicy.allowedModules.includes(module)} />{module}</label>)}</div></fieldset>
+            <label>IP allowlist <small>One IP per line or comma separated. Leave empty to allow any IP.</small><textarea name="ipAllowlist" rows={3} defaultValue={(accessAccount.accessPolicy?.ipAllowlist ?? []).join('\n')} /></label>
+            <div className="admin-profile-modal-actions"><button type="button" className="btn btn-outline" onClick={() => setAccessAccount(null)}>Cancel</button><button type="submit" className="btn btn-primary" disabled={accessSaving}>{accessSaving ? 'Saving…' : 'Save access policy'}</button></div>
+          </div>
+        </form>
+      </div>
+    )}
   </div>;
 }

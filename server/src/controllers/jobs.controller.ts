@@ -136,7 +136,7 @@ export async function applyForJob(req: Request, res: Response): Promise<void> {
     phone,
     coverLetter,
     cvUrl,
-    `${config.client.url}/admin/jobs`,
+    `${config.client.url}/admin/login?next=${encodeURIComponent(`/admin/jobs?application=${application.id}`)}`,
   ).catch(() => undefined);
 
   res.status(201).json(successResponse(
