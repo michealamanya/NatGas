@@ -52,6 +52,19 @@ function Spinner() {
   );
 }
 
+function AdminRouteLoading() {
+  return (
+    <div className="admin-route-loading" role="status" aria-live="polite">
+      <div className="loading-spinner" />
+      <span>Loading section…</span>
+    </div>
+  );
+}
+
+function lazyAdminPage(children: ReactNode) {
+  return <Suspense fallback={<AdminRouteLoading />}>{children}</Suspense>;
+}
+
 // ── Scroll to top on route change ─────────────────────────────────────────────
 function ScrollTop() {
   const { pathname } = useLocation();
@@ -162,19 +175,19 @@ export default function App() {
           }
         >
           <Route index element={<Navigate to="/admin/dashboard" replace />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="products"  element={<AdminProducts />} />
-          <Route path="orders"    element={<AdminOrders />} />
-          <Route path="services"  element={<AdminServices />} />
-          <Route path="media"     element={<AdminMedia />} />
-          <Route path="locations" element={<AdminLocations />} />
-          <Route path="news"      element={<AdminNews />} />
-          <Route path="jobs"      element={<AdminJobs />} />
-          <Route path="messages"  element={<AdminMessages />} />
-          <Route path="users"     element={<AdminUsers />} />
-          <Route path="audit"     element={<AdminAudit />} />
-          <Route path="settings"  element={<AdminSettings />} />
-          <Route path="experience" element={<AdminExperience />} />
+          <Route path="dashboard" element={lazyAdminPage(<Dashboard />)} />
+          <Route path="products"  element={lazyAdminPage(<AdminProducts />)} />
+          <Route path="orders"    element={lazyAdminPage(<AdminOrders />)} />
+          <Route path="services"  element={lazyAdminPage(<AdminServices />)} />
+          <Route path="media"     element={lazyAdminPage(<AdminMedia />)} />
+          <Route path="locations" element={lazyAdminPage(<AdminLocations />)} />
+          <Route path="news"      element={lazyAdminPage(<AdminNews />)} />
+          <Route path="jobs"      element={lazyAdminPage(<AdminJobs />)} />
+          <Route path="messages"  element={lazyAdminPage(<AdminMessages />)} />
+          <Route path="users"     element={lazyAdminPage(<AdminUsers />)} />
+          <Route path="audit"     element={lazyAdminPage(<AdminAudit />)} />
+          <Route path="settings"  element={lazyAdminPage(<AdminSettings />)} />
+          <Route path="experience" element={lazyAdminPage(<AdminExperience />)} />
         </Route>
 
         {/* ── Catch-all ───────────────────────────────────── */}

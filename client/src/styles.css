@@ -1322,6 +1322,53 @@ body { background:#f7f8f7; }
 .toast { position:fixed; bottom:22px; right:22px; z-index:600; background:var(--green); color:#fff; padding:12px 18px; border-radius:var(--radius); font-size:13px; font-weight:600; box-shadow:var(--shadow-lg); display:flex; align-items:center; gap:8px; animation:slideup .22s ease; max-width:340px; }
 .toast.error, .toast.err { background:#9b5b00; }
 
+.admin-action-progress {
+  position: fixed;
+  top: 68px;
+  right: 22px;
+  z-index: 650;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #0d3b35;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(13,59,53,.18);
+  font-size: 12px;
+  font-weight: 700;
+}
+.admin-route-loading {
+  min-height: 420px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #dde5e2;
+  border-top-color: #0e3d39;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@media (max-width: 1200px) {
+  .admin-main { padding:22px 20px; }
+  .data-table { min-width: 920px; }
+  .data-table th:last-child,
+  .data-table td:last-child {
+    position: sticky;
+    right: 0;
+    background: #fff;
+    box-shadow: -8px 0 14px rgba(17,24,39,.04);
+  }
+  .staff-actions { flex-wrap: wrap; max-width: 190px; }
+  .admin-top-r > span:first-child { display:none; }
+}
+
 /* ── Admin tabs bar ───────────────────────────────────────────────── */
 .admin-tabs { display:flex; gap:4px; border-bottom:1px solid var(--border); margin-bottom:16px; padding-bottom:0; }
 .admin-tabs button { padding:8px 16px; font:inherit; font-size:13px; font-weight:600; color:var(--muted); background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-1px; cursor:pointer; transition:color .15s, border-color .15s; }

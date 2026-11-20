@@ -6,6 +6,9 @@ export type ApiResult<T> = {
 };
 
 export async function api<T>(path: string, options: RequestInit = {}): Promise<ApiResult<T>> {
+  const method = (options.method ?? 'GET').toUpperCase();
+  const isMutation = !['GET', 'HEAD'].includes(method);
+  if (isMutation) window.dispatchEvent(new CustomEvent('natgas-action-start'));
   const isFormData = options.body instanceof FormData;
   const controller = options.signal ? null : new AbortController();
   const timeout = controller ? window.setTimeout(() => controller.abort(), isFormData ? 120_000 : 30_000) : undefined;
@@ -17,17 +20,28 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<A
   try {
     response = await fetch(`/api${path}`, { credentials: 'include', ...options, signal: options.signal ?? controller?.signal, headers });
   } catch (error) {
-    if (error instanceof DOMException && error.name === 'AbortError') throw new Error('The request took too long. Please try again.');
-    throw error;
+    const message = error instanceof DOMException && error.name === 'AbortError'
+      ? 'The request took too long. Please try again.'
+      : 'Unable to reach NATGAS services.';
+    if (isMutation) window.dispatchEvent(new CustomEvent('natgas-action-error', { detail: message }));
+    throw new Error(message);
   } finally {
     if (timeout) window.clearTimeout(timeout);
+    if (isMutation) window.dispatchEvent(new CustomEvent('natgas-action-end'));
   }
   const body = await response.json().catch(() => ({ message: 'Unable to reach NATGAS services.' }));
   if (!response.ok) {
     const fieldErrors = body.errors && typeof body.errors === 'object'
       ? Object.values(body.errors as Record<string, string[]>).flat().filter(Boolean).join(' ')
       : '';
-    throw new Error(fieldErrors || body.message || 'Request failed.');
+    const message = fieldErrors || body.message || 'Request failed.';
+    if (isMutation) window.dispatchEvent(new CustomEvent('natgas-action-error', { detail: message }));
+    throw new Error(message);
+  }
+  if (isMutation) {
+    const message = body.message
+      || (method === 'DELETE' ? 'Deleted successfully.' : method === 'POST' ? 'Action completed successfully.' : 'Changes saved successfully.');
+    window.dispatchEvent(new CustomEvent('natgas-action-success', { detail: message }));
   }
   return { ...body, data: normalizeLegacyUploadUrls(body.data) } as ApiResult<T>;
 }

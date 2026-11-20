@@ -1,6 +1,6 @@
 import {
   BarChart3, Briefcase, FileText, Globe, LayoutDashboard,
-  Image, LogOut, MapPin, MessageSquare, Package, Settings, Users, Upload, PanelLeftClose, PanelLeftOpen,
+  Image, Loader2, LogOut, MapPin, MessageSquare, Package, Settings, Users, Upload, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
@@ -29,6 +29,32 @@ export default function AdminLayout({ user, onLogout }: { user: User; onLogout?:
   const profileInput = useRef<HTMLInputElement>(null);
   const [newApplications, setNewApplications] = useState(0);
   const [navCollapsed, setNavCollapsed] = useState(() => localStorage.getItem('natgas-admin-nav-collapsed') === 'true');
+  const [actionBusy, setActionBusy] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  useEffect(() => {
+    let toastTimer: number | undefined;
+    const showToast = (message: string, type: 'success' | 'error') => {
+      setToast({ message, type });
+      if (toastTimer) window.clearTimeout(toastTimer);
+      toastTimer = window.setTimeout(() => setToast(null), 4000);
+    };
+    const handleStart = () => setActionBusy(true);
+    const handleEnd = () => setActionBusy(false);
+    const handleSuccess = (event: Event) => showToast(String((event as CustomEvent).detail ?? 'Action completed successfully.'), 'success');
+    const handleError = (event: Event) => showToast(String((event as CustomEvent).detail ?? 'Action could not be completed.'), 'error');
+    window.addEventListener('natgas-action-start', handleStart);
+    window.addEventListener('natgas-action-end', handleEnd);
+    window.addEventListener('natgas-action-success', handleSuccess);
+    window.addEventListener('natgas-action-error', handleError);
+    return () => {
+      if (toastTimer) window.clearTimeout(toastTimer);
+      window.removeEventListener('natgas-action-start', handleStart);
+      window.removeEventListener('natgas-action-end', handleEnd);
+      window.removeEventListener('natgas-action-success', handleSuccess);
+      window.removeEventListener('natgas-action-error', handleError);
+    };
+  }, []);
 
   useEffect(() => {
     const refreshApplications = () => api<{ counts?: { applications?: { new?: number } } }>('/admin/dashboard')
@@ -107,6 +133,12 @@ export default function AdminLayout({ user, onLogout }: { user: User; onLogout?:
 
       {/* ── Main body ── */}
       <div className="admin-body">
+        {actionBusy && (
+          <div className="admin-action-progress" role="status" aria-live="polite">
+            <Loader2 size={14} className="spin" />
+            <span>Processing action…</span>
+          </div>
+        )}
         {/* Top bar */}
         <div className="admin-top">
           <h2>Natgas Uganda — Content Management</h2>
@@ -130,6 +162,11 @@ export default function AdminLayout({ user, onLogout }: { user: User; onLogout?:
         <main className="admin-main">
           <Outlet />
         </main>
+        {toast && (
+          <div className={`toast ${toast.type === 'error' ? 'error' : ''}`} role="status" aria-live="polite">
+            {toast.message}
+          </div>
+        )}
       </div>
     </div>
   );
